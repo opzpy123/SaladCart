@@ -4852,3 +4852,25 @@ textarea.editable {
     grid-template-columns: minmax(0, 1fr) 340px;
   }
 }
+
+/* voice track in the rough-cut timeline */
+.timeline-track--voice {
+  min-height: 36px;
+}
+.voice-chip {
+  position: absolute;
+  top: 5px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(168, 193, 90, 0.16);
+  border: 1px solid rgba(120, 147, 56, 0.28);
+  color: #4f6623;
+  font-size: 7.5px;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

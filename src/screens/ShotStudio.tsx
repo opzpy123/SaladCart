@@ -6,6 +6,7 @@ import {
   Film,
   Image as ImageIcon,
   Layers,
+  Mic,
   Play,
   SlidersHorizontal,
   Sparkles,
@@ -31,6 +32,7 @@ export function ShotStudio() {
   const toggle = useAppStore((s) => s.toggleShotSelection);
   const setSelection = useAppStore((s) => s.setShotSelection);
   const generateShot = useAppStore((s) => s.generateShot);
+  const generateVoices = useAppStore((s) => s.generateVoices);
   const batchGenerate = useAppStore((s) => s.batchGenerate);
   const openContext = useAppStore((s) => s.openShotContext);
   const selectShot = useAppStore((s) => s.selectShot);
@@ -43,6 +45,10 @@ export function ShotStudio() {
   const filtered = shots.filter((shot) => filter === "all" || shot.status === filter);
   const videos = shots.filter((shot) => shot.videoAssetId).length;
   const reviewing = shots.filter((shot) => shot.status === "needs_review").length;
+  const dialogueShots = shots.filter((shot) => shot.dialogue.trim()).map((shot) => shot.id);
+  const selectedDialogueShots = selected.filter((id) =>
+    shots.find((shot) => shot.id === id)?.dialogue.trim(),
+  );
 
   if (!snapshot) return null;
 
@@ -74,6 +80,14 @@ export function ShotStudio() {
             <span>待审</span>
             <strong>{reviewing}</strong>
           </div>
+          <Button
+            variant="secondary"
+            icon={<Mic size={15} />}
+            onClick={() => void generateVoices(dialogueShots)}
+            disabled={!dialogueShots.length}
+          >
+            全部配音
+          </Button>
           <Button variant="secondary" icon={<Clapperboard size={15} />} onClick={() => void autoAssemble()} disabled={!videos}>
             装配时间线
           </Button>
@@ -130,6 +144,15 @@ export function ShotStudio() {
                 onClick={() => void batchGenerate(selected, "video", continuity)}
               >
                 批量视频
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<Mic size={14} />}
+                onClick={() => void generateVoices(selectedDialogueShots)}
+                disabled={!selectedDialogueShots.length}
+              >
+                批量配音
               </Button>
             </div>
           </div>

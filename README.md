@@ -80,7 +80,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `9053fd0568b670a2edea5fc3f2d6c5472bd29450756d4c09e41bdec43bf2fc66`），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `2757e6af3238479789b0a1e1d8c43e12a7d0170f4210d1042e75354379bf898d`，包含批量配音与剪辑台 V1 配音轨），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 

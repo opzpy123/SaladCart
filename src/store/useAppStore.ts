@@ -87,6 +87,7 @@ interface AppStore {
   generateScript: (overrides?: Partial<GenerateScriptRequest>) => Promise<void>;
   generateCharacter: (characterId: string, variant: "portrait" | "sheet") => Promise<void>;
   generateVoice: (shotId: string) => Promise<void>;
+  generateVoices: (shotIds: string[]) => Promise<void>;
   generateShot: (shotId: string, kind: "image" | "video") => Promise<void>;
   batchGenerate: (shotIds: string[], kind: "image" | "video", useContinuity?: boolean) => Promise<void>;
   openShotContext: (shotId: string, kind: "image" | "video") => Promise<void>;
@@ -562,6 +563,33 @@ export const useAppStore = create<AppStore>()((set, get) => {
         pushToast("success", "配音已生成", asset.name);
       } catch (error) {
         pushToast("error", "配音生成失败", formatError(error));
+      }
+    },
+
+    generateVoices: async (shotIds) => {
+      const snapshot = get().snapshot;
+      if (!snapshot || !shotIds.length) return;
+      pushToast("info", `开始生成 ${shotIds.length} 条配音`, "使用系统语音，逐条写入项目");
+      let done = 0;
+      let failed = 0;
+      for (const shotId of shotIds) {
+        try {
+          await invoke("generate_shot_voice", {
+            projectId: snapshot.project.id,
+            shotId,
+            voice: null,
+          });
+          done += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+      await get().refreshSnapshot(true);
+      if (done) {
+        pushToast("success", `${done} 条配音已生成`, failed ? `${failed} 条失败，可单独重试` : "导出时自动混入");
+      }
+      if (failed && !done) {
+        pushToast("error", "配音生成失败", "请检查系统语音是否可用");
       }
     },
 

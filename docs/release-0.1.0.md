@@ -1,14 +1,14 @@
 # SaladCart 0.1.0 — release notes
 
 Release date: 2026-10-27
-Source commit: `69b903e` (`feat: ship SaladCart v0.1 AI comic-drama workstation`)
+Source: `main` at build time (includes the batch voice-over and V1 voice track phase)
 Status: **unsigned prerelease** — macOS arm64 artifact built locally. Windows build is configured but not yet executed.
 
 ## Artifact
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
-| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.8 MB | `9053fd0568b670a2edea5fc3f2d6c5472bd29450756d4c09e41bdec43bf2fc66` |
+| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.8 MB | `2757e6af3238479789b0a1e1d8c43e12a7d0170f4210d1042e75354379bf898d` |
 
 This DMG is **not signed or notarized**. On first open, macOS may require right-click → **Open**, or System Settings → Privacy & Security → **Open Anyway**. Production distribution needs an Apple Developer ID and notarization.
 
@@ -24,7 +24,7 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 - Persistent generation jobs with progress, cost estimates, retry/cancel and version lineage.
 - One-click native demo project generated through the real store/media pipeline (script, characters, keyframes, four FFmpeg clips, music bed, beat-synced timeline).
 - Bundled per-platform FFmpeg 4.4 sidecar; video preview, beat analysis and export work without Homebrew/winget. License notice in `THIRD_PARTY_NOTICES.md`.
-- Timeline auto-assembly, trim/reorder, subtitles, music, OS-TTS dialogue voice-over mixed into export, formats, FFmpeg MP4 export with AI-generation metadata.
+- Timeline auto-assembly, trim/reorder, subtitles, music, OS-TTS dialogue voice-over (single and batch across shots) mixed into export, a V1 voice track in the editor, formats, FFmpeg MP4 export with AI-generation metadata.
 - Cross-project style copy and an exportable provenance manifest covering characters, shots, provider/model/seed lineage, jobs, and music licences.
 - Jamendo licensed music search; Stability Audio / ElevenLabs music generation; native beat detection and auto-cut.
 - OS keychain secrets. No telemetry. Browser demo bridge with a complete sample project for UI testing.

@@ -8,6 +8,7 @@ import {
   Download,
   FileJson,
   Film,
+  Mic,
   Music,
   Pause,
   Play,
@@ -97,6 +98,29 @@ export function EditorScreen() {
   const audioAssets = snapshot?.assets.filter((a) => a.kind === "audio") ?? [];
   const projectName = snapshot?.project.name ?? "SaladCart";
   const totalMs = clips.reduce((sum, clip) => sum + clip.durationMs, 0);
+  const allProjectShots = snapshot?.episodes.flatMap((e) => e.scenes.flatMap((s) => s.shots)) ?? [];
+  const voiceClips = useMemo(() => {
+    const result: Array<{ start: number; duration: number; label: string; assetId: string }> = [];
+    let cursor = 0;
+    for (const clip of clips) {
+      if (clip.shotId) {
+        const shot = allProjectShots.find((item) => item.id === clip.shotId);
+        const asset = shot?.voiceAssetId
+          ? snapshot?.assets.find((item) => item.id === shot.voiceAssetId)
+          : undefined;
+        if (shot && asset) {
+          result.push({
+            start: cursor,
+            duration: asset.durationMs ?? shot.durationMs,
+            label: `${shot.title} · ${asset.name}`,
+            assetId: asset.id,
+          });
+        }
+      }
+      cursor += clip.durationMs;
+    }
+    return result;
+  }, [clips, allProjectShots, snapshot?.assets]);
   const durationSec = Math.max(1, Math.ceil(totalMs / 1000));
   const pxPerSec = 26;
   const trackWidth = Math.max(760, durationSec * pxPerSec);
@@ -273,6 +297,7 @@ export function EditorScreen() {
           <div className="stage-strip">
             <span><i className="dot dot--green" /> {clips.length} 个片段</span>
             <span>{formatDuration(totalMs)}</span>
+            <span><Mic size={13} /> {voiceClips.length} 条配音</span>
             <span>{timeline.width}×{timeline.height} · {timeline.fps}fps</span>
             <span className={timeline.musicAssetId ? "" : "muted"}>
               <Music size={13} /> {musicAsset?.name ?? "无配乐"}
@@ -733,6 +758,28 @@ export function EditorScreen() {
                     <span className="music-clip__empty">无配乐 · 在右侧搜索或生成</span>
                   )}
                 </div>
+              </div>
+            </div>
+            <div className="timeline-track timeline-track--voice">
+              <div className="track-head">V1</div>
+              <div className="track-lane">
+                {voiceClips.map((clip, i) => (
+                  <span
+                    key={`${clip.assetId}-${i}`}
+                    className="voice-chip"
+                    style={{
+                      left: (clip.start / 1000) * pxPerSec,
+                      width: Math.max(60, (clip.duration / 1000) * pxPerSec),
+                    }}
+                    title={clip.label}
+                  >
+                    <Mic size={10} />
+                    {clip.label}
+                  </span>
+                ))}
+                {!voiceClips.length ? (
+                  <div className="timeline-empty">暂无配音 · 在分镜工坊点击「全部配音」</div>
+                ) : null}
               </div>
             </div>
             <div className="timeline-track timeline-track--subs">
