@@ -447,6 +447,7 @@ const project: Project = {
   language: "zh-CN",
   aspectRatio: "9:16",
   targetEpisodeSeconds: 90,
+  budgetCap: 0,
   styleBible: STYLE,
   createdAt: now(),
   updatedAt: now(),
@@ -867,6 +868,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
         language: input.language,
         aspectRatio: input.aspectRatio,
         targetEpisodeSeconds: input.targetEpisodeSeconds,
+        budgetCap: input.budgetCap ?? 0,
         styleBible: input.styleBible ?? STYLE,
         createdAt: now(),
         updatedAt: now(),
@@ -1078,6 +1080,18 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
     case "generate_media": {
       const request = args.request as GenerationRequest;
       const context = contextFor(request);
+      if (snapshot.project.budgetCap > 0) {
+        const committed = snapshot.jobs.reduce(
+          (sum, item) =>
+            sum + (item.status === "queued" || item.status === "running" ? item.costEstimate : item.costActual),
+          0,
+        );
+        if (committed + context.estimatedCost > snapshot.project.budgetCap + 1e-6) {
+          throw new Error(
+            `项目预算上限 ¥${snapshot.project.budgetCap.toFixed(2)}，已占用 ¥${committed.toFixed(2)}，本次预计 ¥${context.estimatedCost.toFixed(2)}`,
+          );
+        }
+      }
       const profile = settings.providers.find((p) => p.id === context.providerId) ?? settings.providers[0];
       const job = newJob(
         request.kind,

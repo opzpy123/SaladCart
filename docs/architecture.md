@@ -102,6 +102,7 @@ All IDs are UUIDs. Times are ISO-8601 UTC strings; durations are integer millise
 - Shot video generation reads: project style bible + character locked traits/references + scene text + shot description/camera/dialogue + continuity (previous shot summary and optional last-frame asset) + target format.
 - Assets are written under the project folder and registered transactionally. A failed file write never leaves a dangling asset row.
 - Timeline auto-assembly selects each shot's current video in episode/scene/shot order; callers can request approved-only assembly. Older takes are retained in the `shot_takes` table and selectable from the shot inspector; selecting one resets the shot to `needs_review`.
+- Image/video and music enqueue check the project budget cap against committed estimates/actuals before creating a job.
 
 ## 6. Context compiler (the differentiator)
 

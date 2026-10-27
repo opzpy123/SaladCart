@@ -31,6 +31,7 @@ export interface Project {
   language: string;
   aspectRatio: string;
   targetEpisodeSeconds: number;
+  budgetCap: number;
   styleBible: StyleBible;
   createdAt: string;
   updatedAt: string;
@@ -355,6 +356,7 @@ export interface CreateProjectInput {
   language: string;
   aspectRatio: string;
   targetEpisodeSeconds: number;
+  budgetCap?: number;
   stylePreset: string | null;
   styleBible?: StyleBible | null;
 }
@@ -368,6 +370,7 @@ export interface UpdateProjectInput {
   language?: string;
   aspectRatio?: string;
   targetEpisodeSeconds?: number;
+  budgetCap?: number;
   styleBible?: StyleBible;
 }
 

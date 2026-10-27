@@ -34,6 +34,7 @@ pub struct Project {
     pub language: String,
     pub aspect_ratio: String,
     pub target_episode_seconds: i64,
+    pub budget_cap: f64,
     pub style_bible: StyleBible,
     pub created_at: String,
     pub updated_at: String,
@@ -328,6 +329,8 @@ pub struct CreateProjectInput {
     pub language: String,
     pub aspect_ratio: String,
     pub target_episode_seconds: i64,
+    #[serde(default)]
+    pub budget_cap: f64,
     pub style_preset: Option<String>,
     pub style_bible: Option<StyleBible>,
 }
@@ -343,6 +346,7 @@ pub struct UpdateProjectInput {
     pub language: Option<String>,
     pub aspect_ratio: Option<String>,
     pub target_episode_seconds: Option<i64>,
+    pub budget_cap: Option<f64>,
     pub style_bible: Option<StyleBible>,
 }
 

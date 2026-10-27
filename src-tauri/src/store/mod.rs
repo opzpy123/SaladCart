@@ -108,8 +108,8 @@ impl ProjectStore {
             input.language.as_str()
         };
         conn.execute(
-            "INSERT INTO project (id,name,premise,logline,genre,tone,language,aspect_ratio,target_episode_seconds,style_json,created_at,updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
+            "INSERT INTO project (id,name,premise,logline,genre,tone,language,aspect_ratio,target_episode_seconds,budget_cap,style_json,created_at,updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?12)",
             params![
                 id,
                 name,
@@ -120,6 +120,7 @@ impl ProjectStore {
                 language,
                 aspect,
                 input.target_episode_seconds.clamp(15, 600),
+                input.budget_cap.max(0.0),
                 serde_json::to_string(&style)?,
                 now
             ],
@@ -216,12 +217,15 @@ impl ProjectStore {
         if let Some(v) = input.target_episode_seconds {
             project.target_episode_seconds = v.clamp(15, 600);
         }
+        if let Some(v) = input.budget_cap {
+            project.budget_cap = v.max(0.0);
+        }
         if let Some(v) = input.style_bible {
             project.style_bible = v;
         }
         project.updated_at = now_iso();
         self.conn.execute(
-            "UPDATE project SET name=?1,premise=?2,logline=?3,genre=?4,tone=?5,language=?6,aspect_ratio=?7,target_episode_seconds=?8,style_json=?9,updated_at=?10",
+            "UPDATE project SET name=?1,premise=?2,logline=?3,genre=?4,tone=?5,language=?6,aspect_ratio=?7,target_episode_seconds=?8,budget_cap=?9,style_json=?10,updated_at=?11",
             params![
                 project.name,
                 project.premise,
@@ -231,6 +235,7 @@ impl ProjectStore {
                 project.language,
                 project.aspect_ratio,
                 project.target_episode_seconds,
+                project.budget_cap,
                 serde_json::to_string(&project.style_bible)?,
                 project.updated_at
             ],

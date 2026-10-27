@@ -54,6 +54,30 @@ impl ProjectStore {
             .or_not_found("job")
     }
 
+    pub fn committed_cost(&self) -> AppResult<f64> {
+        self.conn
+            .query_row(
+                "SELECT COALESCE(SUM(CASE WHEN status IN ('queued','running') THEN cost_estimate ELSE cost_actual END),0) FROM jobs",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(Into::into)
+    }
+
+    pub fn ensure_budget(&self, additional: f64) -> AppResult<()> {
+        let cap = self.project()?.budget_cap;
+        if cap <= 0.0 {
+            return Ok(());
+        }
+        let spent = self.committed_cost()?;
+        if spent + additional.max(0.0) > cap + 1e-6 {
+            return Err(AppError::Message(format!(
+                "project budget cap ¥{cap:.2} reached: committed ¥{spent:.2} + estimated ¥{additional:.2}"
+            )));
+        }
+        Ok(())
+    }
+
     pub fn list_jobs(&self, limit: i64) -> AppResult<Vec<GenerationJob>> {
         let mut stmt = self
             .conn

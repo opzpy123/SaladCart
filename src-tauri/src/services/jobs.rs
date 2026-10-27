@@ -86,6 +86,7 @@ pub fn enqueue_generation(
     let settings = state.settings();
     let store = ProjectStore::open(&state.paths, project_id)?;
     let compiled = context::compile(&store, &settings, &request)?;
+    store.ensure_budget(compiled.estimated_cost)?;
     let summary = format!("{} · {}", compiled.title, compiled.provider_label);
     let mut request = request;
     request.compiled = Some(compiled.clone());
@@ -171,6 +172,7 @@ pub fn enqueue_music(
     let duration = request.duration_ms.clamp(8_000, 120_000);
     let cost = providers::estimate_cost(&profile.id, "music", duration, 1);
     let store = ProjectStore::open(&state.paths, project_id)?;
+    store.ensure_budget(cost)?;
     let job = new_job(
         project_id,
         JobSpec {

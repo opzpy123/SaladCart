@@ -37,6 +37,8 @@ const KIND_LABEL: Record<Kind, string> = {
 
 export function SettingsScreen() {
   const settings = useAppStore((s) => s.settings);
+  const snapshot = useAppStore((s) => s.snapshot);
+  const updateProject = useAppStore((s) => s.updateProject);
   const system = useAppStore((s) => s.system);
   const updatePreferences = useAppStore((s) => s.updatePreferences);
   const refreshSystem = useAppStore((s) => s.refreshSystem);
@@ -45,7 +47,12 @@ export function SettingsScreen() {
   const [kind, setKind] = useState<Kind>("llm");
   const [defaults, setDefaults] = useState({ llm: "", image: "", video: "", concurrency: 2 });
   const [ffmpegPath, setFfmpegPath] = useState("");
+  const [budgetCap, setBudgetCap] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (snapshot) setBudgetCap(snapshot.project.budgetCap ? String(snapshot.project.budgetCap) : "");
+  }, [snapshot?.project.id, snapshot?.project.budgetCap]);
 
   useEffect(() => {
     if (!settings) return;
@@ -61,6 +68,15 @@ export function SettingsScreen() {
   const providers = useMemo(
     () => settings?.providers.filter((p) => p.kind === kind) ?? [],
     [settings, kind],
+  );
+  const committed = useMemo(
+    () =>
+      (snapshot?.jobs ?? []).reduce(
+        (sum, job) =>
+          sum + (job.status === "queued" || job.status === "running" ? job.costEstimate : job.costActual),
+        0,
+      ),
+    [snapshot?.jobs],
   );
 
   if (!settings) return null;
@@ -85,6 +101,15 @@ export function SettingsScreen() {
     await refreshSettings();
     setSaving(false);
     pushToast("success", "FFmpeg 路径已更新");
+  };
+
+  const saveBudget = async () => {
+    const value = Math.max(0, Number(budgetCap) || 0);
+    setSaving(true);
+    await updateProject({ budgetCap: value });
+    setSaving(false);
+    setBudgetCap(value ? String(value) : "");
+    pushToast("success", value ? `项目预算已设为 ¥${value.toFixed(2)}` : "项目预算已关闭");
   };
 
   const openFolder = async () => {
@@ -153,6 +178,36 @@ export function SettingsScreen() {
               </InlineNotice>
             ) : null}
           </section>
+
+          {snapshot ? (
+            <section className="panel settings-section">
+              <SectionHeader
+                title="项目预算"
+                subtitle="0 表示不限额。已占用包含排队/运行中的估算与已完成任务的实际成本；超额生成会在入队时被拦截。"
+              />
+              <div className="settings-form-grid">
+                <Field label="预算上限（¥）">
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={budgetCap}
+                    onChange={(event) => setBudgetCap(event.target.value)}
+                    placeholder="0 = 不限额"
+                  />
+                </Field>
+                <Field label="当前项目已占用（¥）">
+                  <input className="input" readOnly value={committed.toFixed(2)} />
+                </Field>
+              </div>
+              <div className="settings-actions">
+                <Button variant="secondary" loading={saving} onClick={() => void saveBudget()}>
+                  保存预算
+                </Button>
+              </div>
+            </section>
+          ) : null}
 
           <section className="panel settings-section">
             <SectionHeader title="默认路由" subtitle="决定没有特别指定时，剧本、画面和视频走哪个供应商。" />

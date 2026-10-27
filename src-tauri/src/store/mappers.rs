@@ -23,6 +23,7 @@ pub fn map_project(row: &Row<'_>) -> rusqlite::Result<Project> {
         language: row.get("language")?,
         aspect_ratio: row.get("aspect_ratio")?,
         target_episode_seconds: row.get("target_episode_seconds")?,
+        budget_cap: row.get("budget_cap")?,
         style_bible: parse_json(&row.get::<_, String>("style_json")?),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,

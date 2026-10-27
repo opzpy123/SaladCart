@@ -16,6 +16,7 @@ fn input(name: &str) -> CreateProjectInput {
         language: "zh-CN".into(),
         aspect_ratio: "9:16".into(),
         target_episode_seconds: 90,
+        budget_cap: 0.0,
         style_preset: Some("anime-cel".into()),
         style_bible: None,
     }
@@ -673,4 +674,58 @@ fn character_import_is_atomic_when_an_asset_copy_fails() {
         .is_err());
     assert!(failing.list_characters().unwrap().is_empty());
     assert!(failing.list_assets(None).unwrap().is_empty());
+}
+
+#[test]
+fn project_budget_blocks_overcommitment() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("预算测试")).unwrap();
+    store
+        .update_project(UpdateProjectInput {
+            budget_cap: Some(1.0),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(store.project().unwrap().budget_cap, 1.0);
+    assert!((store.committed_cost().unwrap()).abs() < 1e-9);
+    store.ensure_budget(1.0).unwrap();
+    assert!(store.ensure_budget(1.1).is_err());
+
+    let mut job = GenerationJob {
+        id: uuid::Uuid::new_v4().to_string(),
+        project_id: store.project_id.clone(),
+        kind: "video".into(),
+        target_type: "shot".into(),
+        target_id: Some("shot".into()),
+        provider_id: "kling-video".into(),
+        provider_label: "Kling".into(),
+        model: "kling-v1".into(),
+        status: "succeeded".into(),
+        progress: 100,
+        stage: "done".into(),
+        error: None,
+        cost_estimate: 0.4,
+        cost_actual: 0.4,
+        request_summary: "take".into(),
+        request: serde_json::json!({}),
+        result: None,
+        result_asset_id: None,
+        created_at: saladcart_lib::store::now_iso(),
+        started_at: None,
+        finished_at: Some(saladcart_lib::store::now_iso()),
+    };
+    store.insert_job(&job).unwrap();
+    assert!((store.committed_cost().unwrap() - 0.4).abs() < 1e-9);
+    store.ensure_budget(0.5).unwrap();
+    assert!(store.ensure_budget(0.7).is_err());
+
+    job.id = uuid::Uuid::new_v4().to_string();
+    job.status = "queued".into();
+    job.cost_estimate = 0.2;
+    job.cost_actual = 0.0;
+    job.finished_at = None;
+    store.insert_job(&job).unwrap();
+    assert!((store.committed_cost().unwrap() - 0.6).abs() < 1e-9);
+    assert!(store.ensure_budget(0.5).is_err());
 }

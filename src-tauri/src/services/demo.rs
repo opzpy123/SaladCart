@@ -26,6 +26,7 @@ pub async fn create(paths: &AppPaths, settings: &Settings) -> AppResult<ProjectS
         language: "zh-CN".into(),
         aspect_ratio: "9:16".into(),
         target_episode_seconds: 90,
+        budget_cap: 0.0,
         style_preset: Some("anime-cel".into()),
         style_bible: None,
     };
