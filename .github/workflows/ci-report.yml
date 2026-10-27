@@ -1,0 +1,89 @@
+name: Report CI status
+
+on:
+  workflow_run:
+    workflows: ["Build desktop installers"]
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Capture run result and artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_JSON: ${{ toJson(github.event.workflow_run) }}
+        run: |
+          mkdir -p ci-payload
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs" > ci-payload/jobs.json
+          python3 - <<'PY'
+          import json, os
+          run = json.loads(os.environ["RUN_JSON"])
+          jobs = json.load(open("ci-payload/jobs.json")).get("jobs", [])
+          summary = {
+              "runId": run.get("id"),
+              "runAttempt": run.get("run_attempt"),
+              "event": run.get("event"),
+              "status": run.get("status"),
+              "conclusion": run.get("conclusion"),
+              "headSha": run.get("head_sha"),
+              "headBranch": run.get("head_branch"),
+              "url": run.get("html_url"),
+              "createdAt": run.get("created_at"),
+              "updatedAt": run.get("updated_at"),
+              "jobs": [
+                  {
+                      "name": job.get("name"),
+                      "conclusion": job.get("conclusion"),
+                      "startedAt": job.get("started_at"),
+                      "completedAt": job.get("completed_at"),
+                      "steps": [
+                          {"name": step.get("name"), "conclusion": step.get("conclusion")}
+                          for step in job.get("steps", [])
+                      ],
+                  }
+                  for job in jobs
+              ],
+          }
+          with open("ci-payload/latest-status.json", "w") as fh:
+              json.dump(summary, fh, indent=2, ensure_ascii=False)
+          print(json.dumps(summary, indent=2))
+          PY
+          gh run download "$RUN_ID" -D ci-payload/artifacts || true
+          mkdir -p ci-payload/installers
+          find ci-payload/artifacts -type f \( -name '*.dmg' -o -name '*.msi' -o -name '*.exe' \) -size -200M -exec cp {} ci-payload/installers/ \; 2>/dev/null || true
+          gh run view "$RUN_ID" --log-failed > ci-payload/failed.log || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("ci-payload/failed.log")
+          if p.exists() and p.stat().st_size > 250_000:
+              text = p.read_text(errors="replace")[:250_000]
+              p.write_text(text + "\n...[truncated by CI reporter]\n")
+          PY
+          ls -lh ci-payload/installers || true
+      - name: Publish ci-status branch
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          git config user.name "SaladCart CI"
+          git config user.email "ci@saladcart.local"
+          git checkout -b "ci-status-${RUN_ID}"
+          rm -rf ci
+          mkdir -p ci
+          cp ci-payload/latest-status.json ci/latest-status.json
+          if [ -s ci-payload/failed.log ]; then cp ci-payload/failed.log ci/failed.log; fi
+          if [ -d ci-payload/installers ] && [ "$(ls -A ci-payload/installers 2>/dev/null)" ]; then
+            mkdir -p ci/installers
+            cp ci-payload/installers/* ci/installers/
+          fi
+          git add ci
+          git commit -m "ci: report run ${RUN_ID} [skip ci]"
+          git push origin "HEAD:refs/heads/ci-status-${RUN_ID}"
