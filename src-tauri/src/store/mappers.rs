@@ -88,6 +88,7 @@ pub fn map_shot(row: &Row<'_>) -> rusqlite::Result<Shot> {
         start_frame_asset_id: row.get("start_frame_asset_id")?,
         image_asset_id: row.get("image_asset_id")?,
         video_asset_id: row.get("video_asset_id")?,
+        voice_asset_id: row.get("voice_asset_id")?,
         status: row.get("status")?,
         provider_id: row.get("provider_id")?,
         model: row.get("model")?,

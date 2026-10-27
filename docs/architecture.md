@@ -128,6 +128,7 @@ trait VideoProvider { async fn submit(&self, req: VideoRequest) -> Result<Provid
 - **LLM**: OpenAI-compatible chat completions (`response_format: json_object`) covers OpenAI, DeepSeek, Qwen/DashScope-compatible, Gemini's OpenAI compatibility, and Ollama. Mock LLM is deterministic and offline.
 - **Image**: OpenAI Images, Gemini image generation, Replicate, ComfyUI local. Mock produces local placeholder art.
 - **Video**: Kling, Luma, Runway, Replicate, MiniMax, Google Veo, fal.ai; Mock produces a local animated placeholder via FFmpeg.
+- **Voice**: operating-system speech synthesis (macOS `say`, Windows SAPI) turns shot dialogue into a project audio asset; no cloud key required.
 - **Music**: Jamendo licensed search; Stability Audio and ElevenLabs generation; Mock synthesizes a beat-gridded WAV. Beat analysis and auto-cut are pure Rust DSP over FFmpeg-decoded PCM, with licence/attribution stored on imported assets.
 - All remote calls use timeouts, bounded retries for transient HTTP failures, structured errors, and redacted logs.
 - API keys resolve from the OS keychain first, then environment variables for development. Keys are never returned to the renderer (`apiKeySet: true/false` only).
@@ -138,7 +139,8 @@ A generation job is persisted before the network call. Status transitions (`queu
 ## 8. Editor and media pipeline
 
 - `ffprobe` extracts dimensions/duration; thumbnails are generated into `thumbs/`.
-- Auto-assembly builds clips from shot videos; trim/order/subtitles are stored in SQLite.
+- Auto-assembly builds clips from shot videos; trim/order/subtitles/voice links are stored in SQLite.
+- Voice clips are anchored to shot starts and mixed with the music bed at export; AI-generation metadata and a provenance manifest are written alongside the MP4.
 - Export builds an FFmpeg filter graph: scale/pad to target format, concat video, burn subtitles, mix music, encode H.264/AAC with faststart. Progress parses FFmpeg's `-progress pipe:1`. The muxer is capped to the visual timeline duration so infinite silent/music inputs cannot hang an export.
 - Beat analysis decodes mono 22.05 kHz PCM, computes an onset envelope, autocorrelates tempo in the 60–200 BPM range, derives the phase, and persists a millisecond beat grid. Auto-cut snaps a cut to the nearest beat (±180 ms) with a two-beat minimum.
 - If FFmpeg is missing, Settings shows an actionable setup state; generation flows still work; export is disabled with a clear message.

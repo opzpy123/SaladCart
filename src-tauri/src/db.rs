@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::path::Path;
 
-pub const SCHEMA_VERSION: &str = "4";
+pub const SCHEMA_VERSION: &str = "5";
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     if let Some(parent) = path.parent() {
@@ -102,6 +102,7 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
             start_frame_asset_id TEXT,
             image_asset_id TEXT,
             video_asset_id TEXT,
+            voice_asset_id TEXT,
             status TEXT NOT NULL DEFAULT 'draft',
             provider_id TEXT NOT NULL DEFAULT '',
             model TEXT NOT NULL DEFAULT '',
@@ -237,6 +238,7 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
     ensure_column(conn, "assets", "attribution", "attribution TEXT")?;
     ensure_column(conn, "assets", "source_url", "source_url TEXT")?;
     ensure_column(conn, "jobs", "project_id", "project_id TEXT NOT NULL DEFAULT ''")?;
+    ensure_column(conn, "shots", "voice_asset_id", "voice_asset_id TEXT")?;
     conn.execute(
         "UPDATE jobs SET project_id=(SELECT id FROM project LIMIT 1) WHERE project_id=''",
         [],

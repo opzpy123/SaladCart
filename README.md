@@ -68,7 +68,7 @@ Windows: %APPDATA%\com.saladcart.studio
 
 当前 v0.1.0 的自动化验证：
 
-- Rust（13 项）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、上下文编译器、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg MP4 渲染、溯源清单。
+- Rust（14 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、上下文编译器、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 启动验证。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
@@ -80,7 +80,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `941cff9e66b183f04a88da3e64a28b1c9890da78116156e7207b7989e6af872f`），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `9053fd0568b670a2edea5fc3f2d6c5472bd29450756d4c09e41bdec43bf2fc66`），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 

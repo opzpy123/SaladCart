@@ -50,6 +50,7 @@ pub fn build(store: &ProjectStore) -> AppResult<serde_json::Value> {
                     "status": shot.status,
                     "imageAssetId": shot.image_asset_id,
                     "videoAssetId": shot.video_asset_id,
+                    "voiceAssetId": shot.voice_asset_id,
                     "continuityFromShotId": shot.continuity_from_shot_id,
                 })
             })

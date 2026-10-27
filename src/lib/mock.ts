@@ -335,6 +335,7 @@ const shots: Shot[] = shotSpecs.map((spec, i) => ({
   startFrameAssetId: null,
   imageAssetId: shotArtAssets[i].id,
   videoAssetId: i < 3 ? videoAssets[i].id : null,
+  voiceAssetId: null,
   status: spec.status,
   providerId: i < 3 ? "mock-video" : "",
   model: i < 3 ? "saladcart-mock-video" : "",
@@ -993,6 +994,23 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
       return structuredClone(snapshot.project) as T;
     case "export_provenance":
       return `${snapshot.storagePath}/exports/provenance.json` as T;
+    case "generate_shot_voice": {
+      const shot = findShot(args.shotId as string);
+      if (!shot) throw new Error("镜头不存在");
+      const asset = makeAsset(uid(), "audio", "配音 · 演示对白", "/demo/voice.wav", null, {
+        durationMs: 4540,
+        mime: "audio/wav",
+        width: null,
+        height: null,
+        providerId: "system-tts",
+        model: "demo-voice",
+        source: "tts",
+      });
+      snapshot.assets.unshift(asset);
+      updateShotRecord(shot.id, { voiceAssetId: asset.id });
+      touch();
+      return structuredClone(asset) as T;
+    }
     case "get_context_preview":
       return contextFor(args.request as GenerationRequest) as T;
     case "generate_script": {

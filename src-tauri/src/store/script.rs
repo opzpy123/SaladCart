@@ -540,6 +540,22 @@ impl ProjectStore {
         self.get_shot(shot_id)
     }
 
+    pub fn attach_shot_voice(&mut self, shot_id: &str, asset_id: &str) -> AppResult<Shot> {
+        let asset = self.get_asset(asset_id)?;
+        if asset.kind != "audio" {
+            return Err(AppError::Invalid(
+                "dialogue voice must be an audio asset".into(),
+            ));
+        }
+        self.get_shot(shot_id)?;
+        self.conn.execute(
+            "UPDATE shots SET voice_asset_id=?1,updated_at=?2 WHERE id=?3",
+            params![asset.id, now_iso(), shot_id],
+        )?;
+        self.touch()?;
+        self.get_shot(shot_id)
+    }
+
     pub fn set_shot_status(&self, shot_id: &str, status: &str) -> AppResult<Shot> {
         self.get_shot(shot_id)?;
         self.conn.execute(

@@ -137,6 +137,7 @@ pub struct Shot {
     pub start_frame_asset_id: Option<String>,
     pub image_asset_id: Option<String>,
     pub video_asset_id: Option<String>,
+    pub voice_asset_id: Option<String>,
     pub status: String,
     pub provider_id: String,
     pub model: String,

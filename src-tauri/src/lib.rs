@@ -31,6 +31,7 @@ pub fn run() {
             commands::open_project,
             commands::update_project,
             commands::archive_project,
+            commands::generate_shot_voice,
             commands::list_project_references,
             commands::import_project_style,
             commands::import_character,

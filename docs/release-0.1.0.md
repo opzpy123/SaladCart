@@ -8,7 +8,7 @@ Status: **unsigned prerelease** — macOS arm64 artifact built locally. Windows 
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
-| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.6 MB | `941cff9e66b183f04a88da3e64a28b1c9890da78116156e7207b7989e6af872f` |
+| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.8 MB | `9053fd0568b670a2edea5fc3f2d6c5472bd29450756d4c09e41bdec43bf2fc66` |
 
 This DMG is **not signed or notarized**. On first open, macOS may require right-click → **Open**, or System Settings → Privacy & Security → **Open Anyway**. Production distribution needs an Apple Developer ID and notarization.
 
@@ -24,7 +24,7 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 - Persistent generation jobs with progress, cost estimates, retry/cancel and version lineage.
 - One-click native demo project generated through the real store/media pipeline (script, characters, keyframes, four FFmpeg clips, music bed, beat-synced timeline).
 - Bundled per-platform FFmpeg 4.4 sidecar; video preview, beat analysis and export work without Homebrew/winget. License notice in `THIRD_PARTY_NOTICES.md`.
-- Timeline auto-assembly, trim/reorder, subtitles, music, formats, FFmpeg MP4 export with AI-generation metadata.
+- Timeline auto-assembly, trim/reorder, subtitles, music, OS-TTS dialogue voice-over mixed into export, formats, FFmpeg MP4 export with AI-generation metadata.
 - Cross-project style copy and an exportable provenance manifest covering characters, shots, provider/model/seed lineage, jobs, and music licences.
 - Jamendo licensed music search; Stability Audio / ElevenLabs music generation; native beat detection and auto-cut.
 - OS keychain secrets. No telemetry. Browser demo bridge with a complete sample project for UI testing.
@@ -33,11 +33,12 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 
 - `pnpm exec tsc --noEmit` — passed.
 - `pnpm test` — 6/6 frontend tests passed.
-- `cargo test` — 13/13 Rust tests passed (store isolation, job round-trip, mock script generation, context compiler, cross-project style copy, demo pipeline, provenance manifest, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render).
+- `cargo test` — 14/14 automated Rust tests passed, plus an ignored macOS system-TTS integration test run manually and passed (store isolation, job round-trip, mock script generation, context compiler, cross-project style copy, demo pipeline, provenance manifest, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render with voice+music mix, TTS label cleanup).
 - `pnpm build` — production frontend bundle passed.
 - Chromium manual walkthrough: Dashboard, Script, Characters, Shots, Editor, Music, Settings.
 - macOS `.app` debug and release bundles launched; a seeded native demo loaded with 3 characters, 6 shots, 9 images, 4 videos, a 100 BPM music bed and 4 timeline clips. Native image display was fixed to use the Tauri asset protocol for macOS absolute paths.
 - Packaged app detected the bundled FFmpeg 4.4 (`FFmpeg 就绪`) with no environment variables; sidecar lives at `Contents/MacOS/ffmpeg`.
+- Native macOS TTS generated a WAV voice asset, attached it to the shot, and the export mixer accepted the voice track (real MP4 render test).
 - The release screenshot is [native-dashboard.png](assets/native-dashboard.png). Full native UI click automation was partially blocked by macOS Computer Use being locked; the same data pipeline is covered by the demo service test and browser bridge.
 
 ## Requirements and caveats

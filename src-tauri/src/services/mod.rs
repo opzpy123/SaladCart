@@ -5,3 +5,4 @@ pub mod media;
 pub mod music;
 pub mod provenance;
 pub mod script;
+pub mod voice;

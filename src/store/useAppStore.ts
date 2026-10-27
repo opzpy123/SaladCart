@@ -86,6 +86,7 @@ interface AppStore {
 
   generateScript: (overrides?: Partial<GenerateScriptRequest>) => Promise<void>;
   generateCharacter: (characterId: string, variant: "portrait" | "sheet") => Promise<void>;
+  generateVoice: (shotId: string) => Promise<void>;
   generateShot: (shotId: string, kind: "image" | "video") => Promise<void>;
   batchGenerate: (shotIds: string[], kind: "image" | "video", useContinuity?: boolean) => Promise<void>;
   openShotContext: (shotId: string, kind: "image" | "video") => Promise<void>;
@@ -528,6 +529,39 @@ export const useAppStore = create<AppStore>()((set, get) => {
         pushToast("info", variant === "sheet" ? "三视图生成已入队" : "定妆照生成已入队", character.name);
       } catch (error) {
         pushToast("error", "无法启动角色生成", formatError(error));
+      }
+    },
+
+    generateVoice: async (shotId) => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      try {
+        const asset = await invoke<ProjectSnapshot["assets"][number]>("generate_shot_voice", {
+          projectId: snapshot.project.id,
+          shotId,
+          voice: null,
+        });
+        set((state) => {
+          if (!state.snapshot) return {};
+          return {
+            snapshot: {
+              ...state.snapshot,
+              assets: [asset, ...state.snapshot.assets.filter((item) => item.id !== asset.id)],
+              episodes: state.snapshot.episodes.map((episode) => ({
+                ...episode,
+                scenes: episode.scenes.map((scene) => ({
+                  ...scene,
+                  shots: scene.shots.map((shot) =>
+                    shot.id === shotId ? { ...shot, voiceAssetId: asset.id } : shot,
+                  ),
+                })),
+              })),
+            },
+          };
+        });
+        pushToast("success", "配音已生成", asset.name);
+      } catch (error) {
+        pushToast("error", "配音生成失败", formatError(error));
       }
     },
 

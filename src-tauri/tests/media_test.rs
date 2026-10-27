@@ -1,6 +1,6 @@
 use saladcart_lib::providers::image::ImageRequest;
 use saladcart_lib::providers::mock;
-use saladcart_lib::services::media::{Ffmpeg, RenderClip, RenderPlan};
+use saladcart_lib::services::media::{Ffmpeg, RenderClip, RenderPlan, VoiceClip};
 use saladcart_lib::settings;
 
 #[tokio::test]
@@ -55,6 +55,7 @@ async fn ffmpeg_renders_a_real_mp4() {
         subtitles: None,
         music: None,
         music_volume: 0.8,
+        voices: vec![],
         metadata: vec![("title".into(), "SaladCart test".into())],
     };
     let result = ffmpeg.render(&plan, |_| {}).await.unwrap();
@@ -73,4 +74,27 @@ async fn ffmpeg_renders_a_real_mp4() {
     assert_eq!(probe.width, Some(360));
     assert_eq!(probe.height, Some(640));
     assert!(probe.duration_ms.unwrap_or(0) >= 1_000);
+
+    let voice = mock::music("voice test", 2_000, Some(4)).unwrap();
+    let voice_path = temp.path().join("voice.wav");
+    std::fs::write(&voice_path, voice.bytes).unwrap();
+    let voice_output = temp.path().join("export-with-voice.mp4");
+    let voice_plan = RenderPlan {
+        clips: plan.clips.clone(),
+        output: voice_output.clone(),
+        width: 360,
+        height: 640,
+        fps: 24,
+        subtitles: None,
+        music: None,
+        music_volume: 0.8,
+        voices: vec![VoiceClip {
+            path: voice_path,
+            start_ms: 300,
+        }],
+        metadata: vec![],
+    };
+    ffmpeg.render(&voice_plan, |_| {}).await.unwrap();
+    assert!(voice_output.exists());
+    assert!(std::fs::metadata(&voice_output).unwrap().len() > 2_000);
 }

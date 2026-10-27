@@ -96,6 +96,7 @@ export interface Shot {
   startFrameAssetId: string | null;
   imageAssetId: string | null;
   videoAssetId: string | null;
+  voiceAssetId: string | null;
   status: string;
   providerId: string;
   model: string;

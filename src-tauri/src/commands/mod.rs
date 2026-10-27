@@ -48,6 +48,17 @@ pub fn archive_project(state: State<'_, AppState>, project_id: String) -> AppRes
 }
 
 #[tauri::command]
+pub async fn generate_shot_voice(
+    state: State<'_, AppState>,
+    project_id: String,
+    shot_id: String,
+    voice: Option<String>,
+) -> AppResult<Asset> {
+    let paths = state.paths.clone();
+    crate::services::voice::generate(&paths, &project_id, &shot_id, voice).await
+}
+
+#[tauri::command]
 pub fn list_project_references(
     state: State<'_, AppState>,
     project_id: String,

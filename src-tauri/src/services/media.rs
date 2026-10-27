@@ -29,6 +29,12 @@ pub struct RenderClip {
 }
 
 #[derive(Debug, Clone)]
+pub struct VoiceClip {
+    pub path: PathBuf,
+    pub start_ms: i64,
+}
+
+#[derive(Debug, Clone)]
 pub struct RenderPlan {
     pub clips: Vec<RenderClip>,
     pub output: PathBuf,
@@ -38,6 +44,7 @@ pub struct RenderPlan {
     pub subtitles: Option<String>,
     pub music: Option<PathBuf>,
     pub music_volume: f64,
+    pub voices: Vec<VoiceClip>,
     pub metadata: Vec<(String, String)>,
 }
 
@@ -328,6 +335,10 @@ impl Ffmpeg {
             args.push("-i".into());
             args.push("anullsrc=r=48000:cl=stereo".into());
         }
+        for voice in &plan.voices {
+            args.push("-i".into());
+            args.push(voice.path.to_string_lossy().to_string());
+        }
 
         let mut filters = Vec::new();
         for (index, clip) in plan.clips.iter().enumerate() {
@@ -376,8 +387,28 @@ impl Ffmpeg {
         } else {
             filters.push("[vcat]null[vout]".into());
         }
-        let audio_input = format!("[{music_index}:a]volume={:.2}[aout]", plan.music_volume.clamp(0.0, 2.0));
-        filters.push(audio_input);
+        filters.push(format!(
+            "[{music_index}:a]volume={:.2}[music]",
+            plan.music_volume.clamp(0.0, 2.0)
+        ));
+        let mut mix_labels = vec!["[music]".to_string()];
+        for (index, voice) in plan.voices.iter().enumerate() {
+            let input = music_index + 1 + index;
+            let delay = voice.start_ms.max(0);
+            filters.push(format!(
+                "[{input}:a]adelay={delay}|{delay},volume=1.0[voice{index}]"
+            ));
+            mix_labels.push(format!("[voice{index}]"));
+        }
+        if mix_labels.len() == 1 {
+            filters.push("[music]anull[aout]".into());
+        } else {
+            filters.push(format!(
+                "{}amix=inputs={}:duration=longest:dropout_transition=0:normalize=0[aout]",
+                mix_labels.concat(),
+                mix_labels.len()
+            ));
+        }
         args.push("-filter_complex".into());
         args.push(filters.join(";"));
         args.push("-map".into());
@@ -543,6 +574,26 @@ pub fn build_render_plan(
     };
     let _ = settings;
     let project = store.project()?;
+    let mut voices = Vec::new();
+    let mut cursor = 0_i64;
+    for clip in &timeline.clips {
+        if let Some(shot_id) = &clip.shot_id {
+            if let Ok(shot) = store.get_shot(shot_id) {
+                if let Some(voice_asset_id) = &shot.voice_asset_id {
+                    if let Ok(asset) = store.get_asset(voice_asset_id) {
+                        let path = PathBuf::from(&asset.abs_path);
+                        if path.exists() {
+                            voices.push(VoiceClip {
+                                path,
+                                start_ms: cursor,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        cursor += clip.duration_ms;
+    }
     Ok(RenderPlan {
         clips,
         output,
@@ -552,6 +603,7 @@ pub fn build_render_plan(
         subtitles,
         music,
         music_volume: timeline.music_volume.clamp(0.0, 2.0),
+        voices,
         metadata: vec![
             ("title".into(), project.name),
             (

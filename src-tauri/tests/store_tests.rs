@@ -426,3 +426,29 @@ fn provenance_manifest_captures_lineage() {
     assert!(body.contains("AI-generated production dossier"));
     assert!(body.contains("SaladCart"));
 }
+
+#[tokio::test]
+#[cfg(target_os = "macos")]
+#[ignore = "requires a system TTS voice; run manually with --ignored"]
+async fn system_tts_generates_a_voice_asset() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("配音测试")).unwrap();
+    let request = GenerateScriptRequest::default();
+    store
+        .apply_generated_script(generated_script(), &request)
+        .unwrap();
+    let shot = store.shots_in_order().unwrap().remove(0);
+    let asset = saladcart_lib::services::voice::generate(
+        &paths,
+        &store.project_id,
+        &shot.id,
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(asset.kind, "audio");
+    assert!(asset.duration_ms.unwrap_or(0) > 0);
+    let updated = store.get_shot(&shot.id).unwrap();
+    assert_eq!(updated.voice_asset_id, Some(asset.id));
+}

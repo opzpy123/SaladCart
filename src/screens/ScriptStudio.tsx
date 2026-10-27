@@ -7,6 +7,7 @@ import {
   Film,
   Image as ImageIcon,
   Lock,
+  Mic,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -33,6 +34,7 @@ export function ScriptStudio() {
   const saveScene = useAppStore((s) => s.saveScene);
   const saveShot = useAppStore((s) => s.saveShot);
   const generateShot = useAppStore((s) => s.generateShot);
+  const generateVoice = useAppStore((s) => s.generateVoice);
   const openContext = useAppStore((s) => s.openShotContext);
   const setShotStatus = useAppStore((s) => s.setShotStatus);
   const autoAssemble = useAppStore((s) => s.autoAssemble);
@@ -277,6 +279,7 @@ export function ScriptStudio() {
               onSave={(patch) => void saveShot(currentShot.id, patch)}
               onGenerateImage={() => void generateShot(currentShot.id, "image")}
               onGenerateVideo={() => void generateShot(currentShot.id, "video")}
+              onGenerateVoice={() => void generateVoice(currentShot.id)}
               onContext={() => void openContext(currentShot.id, "video")}
               onApprove={() => void setShotStatus(currentShot.id, "approved")}
               onReject={() => void setShotStatus(currentShot.id, "needs_review")}
@@ -355,6 +358,7 @@ function ShotInspector({
   onSave,
   onGenerateImage,
   onGenerateVideo,
+  onGenerateVoice,
   onContext,
   onApprove,
   onReject,
@@ -363,6 +367,7 @@ function ShotInspector({
   onSave: (patch: UpdateShotInput) => void;
   onGenerateImage: () => void;
   onGenerateVideo: () => void;
+  onGenerateVoice: () => void;
   onContext: () => void;
   onApprove: () => void;
   onReject: () => void;
@@ -374,6 +379,7 @@ function ShotInspector({
   );
   const characters = snapshot?.characters ?? [];
   const asset = snapshot?.assets.find((a) => a.id === (shot.videoAssetId ?? shot.imageAssetId));
+  const voiceAsset = snapshot?.assets.find((a) => a.id === shot.voiceAssetId);
   const orderedShots = snapshot?.episodes.flatMap((e) => e.scenes.flatMap((s) => s.shots)) ?? [];
   const currentIndex = orderedShots.findIndex((item) => item.id === shot.id);
   const immediatePrevious = currentIndex > 0 ? orderedShots[currentIndex - 1] : null;
@@ -429,6 +435,18 @@ function ShotInspector({
           上下文
         </Button>
       </div>
+      <div className="inspector-actions">
+        <Button variant="ghost" icon={<Mic size={15} />} onClick={onGenerateVoice}>
+          {voiceAsset ? "重新配音" : "生成配音"}
+        </Button>
+      </div>
+      {voiceAsset ? (
+        <div className="inspector-section">
+          <label className="inspector-label">配音 · 系统语音</label>
+          <audio className="audio-bar" controls src={assetUrl(voiceAsset.absPath)} />
+          <small className="muted tiny">导出时自动混入具体入点，与字幕/配乐一起输出。</small>
+        </div>
+      ) : null}
       <div className="inspector-actions inspector-actions--review">
         <Button size="sm" variant="ghost" onClick={onApprove}>
           通过
