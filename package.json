@@ -1,7 +1,7 @@
 {
   "name": "saladcart",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "SaladCart — a native AI comic-drama production workstation",
   "scripts": {
@@ -16,7 +16,8 @@
     "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
     "prepare:ffmpeg": "node scripts/prepare-ffmpeg.mjs",
     "seed:demo": "cargo run --manifest-path src-tauri/Cargo.toml --example seed_demo",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "check:windows": "node scripts/check-windows.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

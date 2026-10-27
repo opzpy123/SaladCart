@@ -29,6 +29,7 @@ pnpm dev            # 浏览器演示桥接（无需 Key，含完整演示项目
 pnpm dev:tauri      # 原生桌面开发模式
 pnpm test           # 前端测试
 pnpm test:rust      # Rust 测试
+pnpm check:windows  # Windows 目标编译门禁（cargo-xwin）
 pnpm build:tauri    # 打包当前平台
 pnpm seed:demo      # 向本机工作区注入一部完整演示项目（剧本/角色/视频/配乐）
 ```
@@ -67,11 +68,11 @@ Windows: %APPDATA%\com.saladcart.studio
 
 ## 验证
 
-当前 v0.1.0 的自动化验证：
+当前 v0.2.0 的自动化验证：
 
 - Rust（24 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、OpenAI Images 与 Kling 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
-- 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
+- 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
 
 ```bash
@@ -81,19 +82,19 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `8ea0293b17add9128c903a0e3f822c1bbb2c5ca2ddf8f6d6a9753198e4f9bc19`，包含素材导入、take 切换、审片装配与项目预算护栏），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.2.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.2.0_aarch64.dmg`（SHA-256 `484f642fc7acf5cf718298223db7ed58c4c3594eb198064a0d8dd089a94fb29d`，包含 take 治理、素材导入、项目预算与 Windows 编译门禁），校验值、安装提示与已知边界见 [docs/release-0.2.0.md](docs/release-0.2.0.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows 构建在 GitHub Actions 矩阵中，目标已通过 `cargo xwin check`，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 
 AI 漫剧的真实生产痛点、证据来源与逐项对策见 [docs/pain-points.md](docs/pain-points.md)。架构与阶段决策见 [docs/architecture.md](docs/architecture.md)。
 
-## 已知边界（v0.1）
+## 已知边界（v0.2）
 
-- 尚未集成评论、角色权限、共享审片与备案清单导出；资产的 provider/model/prompt/seed/父版本与音乐 license/attribution 已入库，为后续合规导出打底。
-- 自动装配不按“已通过”状态拦截，旧 take 的版本已入库但暂未提供界面切换；视频供应商当前只接收一张首帧图，多参考图输入尚未发送。
+- 尚未集成评论、角色权限、共享审片与备案清单导出；审片状态是单机数据，不构成多用户审批记录。
+- 视频供应商当前只接收一张首帧图，多参考图输入尚未发送。
 - 自动卡点使用轻量 Rust DSP，不含 downbeat ML；可后续接入 Beat This 做可选高精度分析。
 - Kling / Luma / MiniMax / Veo 等视频 API 的路径、模型名与账号区域会变化；适配器保留 provider options 覆盖与原始错误，不做假成功。
-- 未包含口型同步、声音克隆与多轨 NLE；v0.1 聚焦从生成到可交付粗剪的闭环。
+- 未包含口型同步、声音克隆与多轨 NLE；v0.2 聚焦从生成到可交付粗剪的闭环。
 - 发布产物未签名/未公证，生产分发前需配置 Apple Developer 与 Windows 代码签名证书。
 
 ## License

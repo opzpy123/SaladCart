@@ -308,14 +308,14 @@ export function SettingsScreen() {
         <aside className="settings-side">
           <section className="panel settings-about">
             <img src="/brand/icon.png" alt="SaladCart" />
-            <p className="eyebrow">SALADCART 0.1.0</p>
+            <p className="eyebrow">SALADCART DESKTOP</p>
             <h2>一台为 AI 漫剧准备的工作站。</h2>
             <p>
               剧本、角色、分镜、视频、配乐和剪辑共享同一个项目图。上下文自动编译、角色锁定、成本预估、任务队列与
               素材溯源都在本机完成。
             </p>
             <div className="about-stats">
-              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.1.0"}</strong></div>
+              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.2.0"}</strong></div>
               <div><span>运行平台</span><strong>{system?.platform ?? "macOS / Windows"}</strong></div>
               <div><span>项目数</span><strong>{system?.projectCount ?? 0}</strong></div>
             </div>
