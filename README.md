@@ -20,7 +20,7 @@ SaladCart 使用 **Tauri 2 + Rust + React** 构建，原生支持 macOS 与 Wind
 
 ## 快速开始
 
-前置：Node.js ≥ 20.19、pnpm、Rust stable、FFmpeg。
+前置：Node.js ≥ 20.19、pnpm、Rust stable。开发构建会由 `prepare:ffmpeg` 下载平台对应的 FFmpeg 并作为 sidecar 打进原生应用；源码运行时也可以使用本机 FFmpeg。
 
 ```bash
 pnpm install
@@ -32,7 +32,7 @@ pnpm build:tauri    # 打包当前平台
 pnpm seed:demo      # 向本机工作区注入一部完整演示项目（剧本/角色/视频/配乐）
 ```
 
-FFmpeg：macOS `brew install ffmpeg`；Windows `winget install Gyan.FFmpeg`。也可以把可执行文件路径填入设置，或设置 `SALADCART_FFMPEG`。未安装 FFmpeg 时剧本与图片生成仍可用，视频与导出会给出可操作的错误。
+打包产物自带 FFmpeg sidecar；若你想在开发模式使用自己的引擎，可在设置中指定路径，或设置 `SALADCART_FFMPEG`。未找到 FFmpeg 时剧本与图片生成仍可用，视频与导出会给出可操作的错误。FFmpeg 的许可证与来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 已接入的供应商
 
@@ -80,7 +80,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`，校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `162d802de47dc6520aeae97c09b471c0de98105ad7dc46144c28ced8b3a8edf8`），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 验证；没有推送 tag，也没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 

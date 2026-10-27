@@ -20,13 +20,18 @@ jobs:
           - platform: macos-14
             args: ""
             artifact: macos-arm64
+            target_triple: aarch64-apple-darwin
           - platform: macos-13
             args: "--target x86_64-apple-darwin"
             artifact: macos-x64
+            target_triple: x86_64-apple-darwin
           - platform: windows-latest
             args: ""
             artifact: windows-x64
+            target_triple: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.platform }}
+    env:
+      SALADCART_TARGET_TRIPLE: ${{ matrix.target_triple }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -48,6 +53,20 @@ jobs:
         run: choco install ffmpeg -y
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
+      - name: Prepare bundled FFmpeg
+        run: pnpm prepare:ffmpeg
+      - name: Verify bundled FFmpeg (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          ./src-tauri/binaries/ffmpeg-$SALADCART_TARGET_TRIPLE -hide_banner -filters | grep -q " subtitles "
+          ./src-tauri/binaries/ffmpeg-$SALADCART_TARGET_TRIPLE -hide_banner -encoders | grep -q "libx264"
+      - name: Verify bundled FFmpeg (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ff = "src-tauri/binaries/ffmpeg-$env:SALADCART_TARGET_TRIPLE.exe"
+          if (-not (& $ff -hide_banner -filters | Select-String -Quiet "subtitles")) { throw "bundled FFmpeg lacks subtitles" }
+          if (-not (& $ff -hide_banner -encoders | Select-String -Quiet "libx264")) { throw "bundled FFmpeg lacks libx264" }
       - name: Run tests
         run: |
           pnpm test

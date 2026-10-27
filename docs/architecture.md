@@ -142,7 +142,7 @@ A generation job is persisted before the network call. Status transitions (`queu
 - Export builds an FFmpeg filter graph: scale/pad to target format, concat video, burn subtitles, mix music, encode H.264/AAC with faststart. Progress parses FFmpeg's `-progress pipe:1`. The muxer is capped to the visual timeline duration so infinite silent/music inputs cannot hang an export.
 - Beat analysis decodes mono 22.05 kHz PCM, computes an onset envelope, autocorrelates tempo in the 60–200 BPM range, derives the phase, and persists a millisecond beat grid. Auto-cut snaps a cut to the nearest beat (±180 ms) with a two-beat minimum.
 - If FFmpeg is missing, Settings shows an actionable setup state; generation flows still work; export is disabled with a clear message.
-- Managed FFmpeg discovery order: explicit setting → app data `bin/` → PATH. Packaging CI can provision per-platform binaries.
+- FFmpeg is provisioned as a per-platform Tauri sidecar at build time (`pnpm prepare:ffmpeg`), with discovery order: explicit setting → env → bundled sidecar → PATH. `ffmpeg -i` parsing provides metadata when ffprobe is absent. Packaging CI verifies the bundled binary exposes `subtitles` and `libx264`.
 
 ## 9. Pain points addressed in v0.1
 

@@ -74,17 +74,16 @@ This is a lightweight DSP tracker, not a downbeat-aware ML model. It is fast, cr
 
 ## FFmpeg
 
+Packaged builds include a platform-specific FFmpeg 4.4 sidecar next to the application executable. Development builds prepare it with `pnpm prepare:ffmpeg`.
+
 Discovery order:
 
 1. Settings → FFmpeg path.
 2. `SALADCART_FFMPEG` environment variable.
-3. `ffmpeg` in `PATH`.
-4. Common install locations (`/opt/homebrew/bin`, `/usr/local/bin`, `C:\ffmpeg\bin`).
+3. Bundled sidecar next to the executable (or in `Contents/Resources`).
+4. `ffmpeg` in `PATH` and common install locations (`/opt/homebrew/bin`, `/usr/local/bin`, `C:\ffmpeg\bin`).
 
-macOS: `brew install ffmpeg`.
-Windows: `winget install Gyan.FFmpeg` or download a static build and point Settings at `ffmpeg.exe`.
-
-The app gracefully disables video mock generation and export when FFmpeg is unavailable; script and image generation still work.
+ffprobe is optional; when absent, SaladCart parses `ffmpeg -i` output for duration and video dimensions. The app gracefully disables video mock generation and export only if no FFmpeg is found; script and image generation still work. See [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) for FFmpeg licensing/source.
 
 ## Troubleshooting
 

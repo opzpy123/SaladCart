@@ -60,4 +60,16 @@ async fn ffmpeg_renders_a_real_mp4() {
     assert!(output.exists());
     assert!(std::fs::metadata(&output).unwrap().len() > 2_000);
     assert!(result.duration_ms >= 2_000);
+
+    // ffprobe is intentionally not bundled; the bundled-FFmpeg path must still
+    // recover duration and dimensions for metadata.
+    let no_probe = Ffmpeg {
+        program: ffmpeg.program.clone(),
+        ffprobe: None,
+    };
+    let clip = temp.path().join("clip-0.mp4");
+    let probe = no_probe.probe(&clip);
+    assert_eq!(probe.width, Some(360));
+    assert_eq!(probe.height, Some(640));
+    assert!(probe.duration_ms.unwrap_or(0) >= 1_000);
 }

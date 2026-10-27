@@ -64,13 +64,14 @@ impl Ffmpeg {
                     .map(PathBuf::from)
                     .filter(|p| p.is_file())
             })
+            .or_else(|| bundled_binary("ffmpeg"))
             .or_else(|| which("ffmpeg"))?;
         let ffprobe = {
             let sibling = ffmpeg.with_file_name(if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" });
             if sibling.is_file() {
                 Some(sibling)
             } else {
-                which("ffprobe")
+                bundled_binary("ffprobe").or_else(|| which("ffprobe"))
             }
         };
         Some(Self {
@@ -90,7 +91,7 @@ impl Ffmpeg {
 
     pub fn probe(&self, path: &Path) -> MediaProbe {
         let Some(ffprobe) = &self.ffprobe else {
-            return MediaProbe::default();
+            return self.probe_with_ffmpeg(path);
         };
         let output = std::process::Command::new(ffprobe)
             .args([
@@ -140,6 +141,48 @@ impl Ffmpeg {
             height: video
                 .and_then(|s| s.get("height"))
                 .and_then(|v| v.as_i64()),
+            duration_ms,
+        }
+    }
+
+    fn probe_with_ffmpeg(&self, path: &Path) -> MediaProbe {
+        let output = std::process::Command::new(&self.program)
+            .args(["-hide_banner", "-i"])
+            .arg(path)
+            .output();
+        let Ok(output) = output else {
+            return MediaProbe::default();
+        };
+        let text = format!(
+            "{}\n{}",
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        );
+        let duration_ms = text.find("Duration: ").and_then(|start| {
+            let value = text.get(start + 10..start + 21)?;
+            let mut parts = value.trim().split(':');
+            let hours: f64 = parts.next()?.trim().parse().ok()?;
+            let minutes: f64 = parts.next()?.trim().parse().ok()?;
+            let seconds: f64 = parts.next()?.trim().parse().ok()?;
+            Some(((hours * 3600.0 + minutes * 60.0 + seconds) * 1000.0) as i64)
+        });
+        let mut width = None;
+        let mut height = None;
+        for token in text.split_whitespace() {
+            let token = token.trim_matches(|c: char| !c.is_ascii_digit() && c != 'x');
+            if let Some((w, h)) = token.split_once('x') {
+                if let (Ok(w), Ok(h)) = (w.parse::<i64>(), h.parse::<i64>()) {
+                    if w >= 16 && h >= 16 {
+                        width = Some(w);
+                        height = Some(h);
+                        break;
+                    }
+                }
+            }
+        }
+        MediaProbe {
+            width,
+            height,
             duration_ms,
         }
     }
@@ -547,6 +590,21 @@ pub fn status(settings: &Settings) -> (bool, Option<String>, Option<String>) {
         ),
         None => (false, None, None),
     }
+}
+
+fn bundled_binary(name: &str) -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    let dir = exe.parent()?;
+    let file = if cfg!(windows) {
+        format!("{name}.exe")
+    } else {
+        name.to_string()
+    };
+    let candidates = [
+        dir.join(&file),
+        dir.parent()?.join("Resources").join(&file),
+    ];
+    candidates.into_iter().find(|path| path.is_file())
 }
 
 fn which(binary: &str) -> Option<PathBuf> {
