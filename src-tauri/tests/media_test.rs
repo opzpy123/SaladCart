@@ -55,6 +55,7 @@ async fn ffmpeg_renders_a_real_mp4() {
         subtitles: None,
         music: None,
         music_volume: 0.8,
+        metadata: vec![("title".into(), "SaladCart test".into())],
     };
     let result = ffmpeg.render(&plan, |_| {}).await.unwrap();
     assert!(output.exists());

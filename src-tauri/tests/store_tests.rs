@@ -382,3 +382,47 @@ fn mock_media_and_music_files_are_created() {
         assert!(ffmpeg.version().is_some());
     }
 }
+
+#[test]
+fn project_style_can_be_copied_from_another_project() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut source = ProjectStore::create(&paths, &input("风格源")).unwrap();
+    source
+        .update_project(UpdateProjectInput {
+            style_bible: Some(StyleBible {
+                visual_style: "manga noir with red accents".into(),
+                palette: "black, bone, cinnabar".into(),
+                lighting: "hard shadows".into(),
+                camera_language: "dutch angles".into(),
+                negative_prompt: "soft light".into(),
+                reference_notes: "keep hatching".into(),
+            }),
+            ..Default::default()
+        })
+        .unwrap();
+    let mut target = ProjectStore::create(&paths, &input("风格目标")).unwrap();
+    let project = target.import_style_from(&source).unwrap();
+    assert_eq!(project.style_bible.visual_style, "manga noir with red accents");
+    assert_eq!(project.name, "风格目标");
+    assert_eq!(target.project().unwrap().style_bible.palette, "black, bone, cinnabar");
+}
+
+#[test]
+fn provenance_manifest_captures_lineage() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("溯源项目")).unwrap();
+    let request = GenerateScriptRequest::default();
+    store
+        .apply_generated_script(generated_script(), &request)
+        .unwrap();
+    let manifest = saladcart_lib::services::provenance::build(&store).unwrap();
+    assert_eq!(manifest["project"]["name"], "溯源项目");
+    assert!(manifest["shots"].as_array().unwrap().len() >= 2);
+    assert!(manifest["characters"].as_array().unwrap().len() >= 1);
+    let path = saladcart_lib::services::provenance::write(&store).unwrap();
+    let body = std::fs::read_to_string(path).unwrap();
+    assert!(body.contains("AI-generated production dossier"));
+    assert!(body.contains("SaladCart"));
+}

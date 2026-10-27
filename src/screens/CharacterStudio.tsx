@@ -431,6 +431,7 @@ function AddCharacterDialog({ open, onClose }: { open: boolean; onClose: () => v
 function ImportCharacterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const loadReferences = useAppStore((s) => s.loadReferences);
   const importCharacter = useAppStore((s) => s.importCharacter);
+  const importStyle = useAppStore((s) => s.importStyle);
   const [references, setReferences] = useState<ProjectReference[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
@@ -439,7 +440,7 @@ function ImportCharacterDialog({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return;
     setLoading(true);
     void loadReferences()
-      .then((refs) => setReferences(refs.filter((ref) => ref.characters.length)))
+      .then((refs) => setReferences(refs.filter((ref) => ref.characters.length > 0 || ref.styleBible.visualStyle)))
       .finally(() => setLoading(false));
   }, [open, loadReferences]);
 
@@ -473,8 +474,19 @@ function ImportCharacterDialog({ open, onClose }: { open: boolean; onClose: () =
           {references.map((ref) => (
             <div key={ref.projectId} className="import-project">
               <div className="import-project__head">
-                <strong>{ref.projectName}</strong>
-                <small>{ref.styleBible.visualStyle}</small>
+                <div>
+                  <strong>{ref.projectName}</strong>
+                  <small>{ref.styleBible.visualStyle}</small>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    void importStyle(ref.projectId).then(onClose);
+                  }}
+                >
+                  用此项目风格
+                </Button>
               </div>
               <div className="import-characters">
                 {ref.characters.map((character) => {

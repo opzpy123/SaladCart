@@ -989,6 +989,10 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
     case "import_character": {
       throw { code: "unavailable", message: "浏览器演示模式不支持跨项目导入，请使用桌面版。" };
     }
+    case "import_project_style":
+      return structuredClone(snapshot.project) as T;
+    case "export_provenance":
+      return `${snapshot.storagePath}/exports/provenance.json` as T;
     case "get_context_preview":
       return contextFor(args.request as GenerationRequest) as T;
     case "generate_script": {

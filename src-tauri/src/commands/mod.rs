@@ -73,6 +73,22 @@ pub fn list_project_references(
 }
 
 #[tauri::command]
+pub fn import_project_style(
+    state: State<'_, AppState>,
+    project_id: String,
+    source_project_id: String,
+) -> AppResult<Project> {
+    if project_id == source_project_id {
+        return Err(AppError::Invalid(
+            "cannot copy a project style onto itself".into(),
+        ));
+    }
+    let source = open(&state, &source_project_id)?;
+    let mut target = open(&state, &project_id)?;
+    target.import_style_from(&source)
+}
+
+#[tauri::command]
 pub fn import_character(
     state: State<'_, AppState>,
     project_id: String,
@@ -453,6 +469,16 @@ pub fn test_provider(
             latency_ms: started.elapsed().as_millis() as u64,
         }),
     }
+}
+
+#[tauri::command]
+pub fn export_provenance(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> AppResult<String> {
+    let store = open(&state, &project_id)?;
+    let path = crate::services::provenance::write(&store)?;
+    Ok(path.to_string_lossy().to_string())
 }
 
 #[tauri::command]

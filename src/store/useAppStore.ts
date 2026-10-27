@@ -95,6 +95,7 @@ interface AppStore {
   addCharacter: (input: CreateCharacterInput) => Promise<void>;
   removeCharacter: (characterId: string) => Promise<void>;
   importCharacter: (sourceProjectId: string, characterId: string) => Promise<void>;
+  importStyle: (sourceProjectId: string) => Promise<void>;
   setShotStatus: (shotId: string, status: string) => Promise<void>;
 
   loadReferences: () => Promise<ProjectReference[]>;
@@ -102,6 +103,7 @@ interface AppStore {
   autoAssemble: () => Promise<void>;
   updateTimeline: (patch: TimelinePatch) => Promise<void>;
   exportTimeline: (options: ExportOptions) => Promise<void>;
+  exportProvenance: () => Promise<void>;
   searchMusic: (query: string) => Promise<void>;
   importMusicTrack: (track: MusicTrack) => Promise<void>;
   generateMusic: (request: MusicGenerationRequest) => Promise<void>;
@@ -688,6 +690,24 @@ export const useAppStore = create<AppStore>()((set, get) => {
       }
     },
 
+    importStyle: async (sourceProjectId) => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      try {
+        const project = await invoke<ProjectSnapshot["project"]>("import_project_style", {
+          projectId: snapshot.project.id,
+          sourceProjectId,
+        });
+        set((state) => ({
+          snapshot: state.snapshot ? { ...state.snapshot, project } : null,
+        }));
+        await get().refreshProjects();
+        pushToast("success", "项目风格已复制", "之后生成的镜头会自动使用新风格");
+      } catch (error) {
+        pushToast("error", "复制项目风格失败", formatError(error));
+      }
+    },
+
     setShotStatus: async (shotId, status) => {
       const snapshot = get().snapshot;
       if (!snapshot) return;
@@ -762,6 +782,19 @@ export const useAppStore = create<AppStore>()((set, get) => {
         pushToast("info", "导出已入队", "FFmpeg 将在后台渲染 MP4");
       } catch (error) {
         pushToast("error", "导出失败", formatError(error));
+      }
+    },
+
+    exportProvenance: async () => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      try {
+        const path = await invoke<string>("export_provenance", {
+          projectId: snapshot.project.id,
+        });
+        pushToast("success", "溯源清单已导出", path);
+      } catch (error) {
+        pushToast("error", "导出溯源清单失败", formatError(error));
       }
     },
 

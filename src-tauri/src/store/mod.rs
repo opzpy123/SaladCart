@@ -306,6 +306,14 @@ impl ProjectStore {
         Ok(())
     }
 
+    pub fn import_style_from(&mut self, source: &ProjectStore) -> AppResult<Project> {
+        let style = source.project()?.style_bible;
+        self.update_project(UpdateProjectInput {
+            style_bible: Some(style),
+            ..Default::default()
+        })
+    }
+
     pub fn asset_abs(&self, rel: &str) -> PathBuf {
         self.dir.join(rel)
     }

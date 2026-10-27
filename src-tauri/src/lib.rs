@@ -32,6 +32,7 @@ pub fn run() {
             commands::update_project,
             commands::archive_project,
             commands::list_project_references,
+            commands::import_project_style,
             commands::import_character,
             commands::update_scene,
             commands::update_shot,
@@ -71,6 +72,7 @@ pub fn run() {
             commands::auto_beat_sync,
             commands::attach_music,
             commands::create_demo_project,
+            commands::export_provenance,
         ])
         .run(tauri::generate_context!())
         .expect("error while running SaladCart");

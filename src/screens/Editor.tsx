@@ -6,6 +6,7 @@ import {
   Check,
   Clock3,
   Download,
+  FileJson,
   Film,
   Music,
   Pause,
@@ -67,6 +68,7 @@ export function EditorScreen() {
   const generateMusic = useAppStore((s) => s.generateMusic);
   const attachMusic = useAppStore((s) => s.attachMusic);
   const exportTimeline = useAppStore((s) => s.exportTimeline);
+  const exportProvenance = useAppStore((s) => s.exportProvenance);
   const settings = useAppStore((s) => s.settings);
   const musicTracks = useAppStore((s) => s.musicTracks);
   const musicSearching = useAppStore((s) => s.musicSearching);
@@ -634,6 +636,9 @@ export function EditorScreen() {
               </div>
               <Button variant="primary" icon={<Download size={15} />} onClick={exportNow} disabled={!clips.length}>
                 开始渲染
+              </Button>
+              <Button variant="secondary" icon={<FileJson size={15} />} onClick={() => void exportProvenance()}>
+                导出溯源清单
               </Button>
               <p className="muted tiny">
                 渲染使用本机 FFmpeg。{settings?.ffmpegPath ? `已发现：${settings.ffmpegPath}` : "若未安装 FFmpeg，请先到设置中配置。"}

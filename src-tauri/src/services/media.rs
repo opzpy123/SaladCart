@@ -38,6 +38,7 @@ pub struct RenderPlan {
     pub subtitles: Option<String>,
     pub music: Option<PathBuf>,
     pub music_volume: f64,
+    pub metadata: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone)]
@@ -411,6 +412,10 @@ impl Ffmpeg {
             .into_iter()
             .map(str::to_string),
         );
+        for (key, value) in &plan.metadata {
+            args.push("-metadata".into());
+            args.push(format!("{key}={value}"));
+        }
         // Infinite silent/music inputs plus filter_complex can keep FFmpeg alive
         // longer than the visual timeline; cap the muxer to the intended length.
         args.push("-t".into());
@@ -537,6 +542,7 @@ pub fn build_render_plan(
         None
     };
     let _ = settings;
+    let project = store.project()?;
     Ok(RenderPlan {
         clips,
         output,
@@ -546,6 +552,13 @@ pub fn build_render_plan(
         subtitles,
         music,
         music_volume: timeline.music_volume.clamp(0.0, 2.0),
+        metadata: vec![
+            ("title".into(), project.name),
+            (
+                "comment".into(),
+                "AI-generated content produced with SaladCart. Provenance manifest: provenance.json".into(),
+            ),
+        ],
     })
 }
 

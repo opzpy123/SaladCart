@@ -1074,6 +1074,9 @@ async fn run_export(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
         source_url: None,
         status: "ready".into(),
     })?;
+    let provenance_path = crate::services::provenance::write(&store)
+        .ok()
+        .map(|path| path.to_string_lossy().to_string());
     let _ = options;
     let _ = settings;
     let finished = store.finish_job(
@@ -1088,6 +1091,7 @@ async fn run_export(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
                 "width": render.width,
                 "height": render.height,
                 "sizeBytes": size,
+                "provenancePath": provenance_path,
             })),
             result_asset_id: Some(asset.id.clone()),
             cost_actual: 0.0,
