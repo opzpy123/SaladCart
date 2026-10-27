@@ -17,3 +17,4 @@ src-tauri/assets/fonts/
 # local project storage outside the repo
 .local-data/
 .screenshots/
+release/
