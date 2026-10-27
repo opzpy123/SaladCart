@@ -71,7 +71,7 @@ Windows: %APPDATA%\com.saladcart.studio
 - Rust（18 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、上下文编译器、关键帧作为视频首帧、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
-- 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
+- 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
 
 ```bash
 pnpm test
