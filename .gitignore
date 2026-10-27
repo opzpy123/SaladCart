@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.vite/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+src-tauri/target/
+src-tauri/gen/
+src-tauri/.tauri/
+src-tauri/binaries/
+src-tauri/assets/fonts/
+
+# local project storage outside the repo
+.local-data/
+.screenshots/
