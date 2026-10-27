@@ -1,7 +1,7 @@
 use crate::error::{AppError, AppResult, OptionExt};
 use crate::models::*;
 use crate::store::mappers::{map_clip, map_subtitle, map_timeline, now_iso};
-use crate::store::{ProjectStore, dimensions_for, normalize_aspect};
+use crate::store::{dimensions_for, normalize_aspect, ProjectStore};
 use rusqlite::{params, OptionalExtension};
 
 impl ProjectStore {
@@ -18,9 +18,9 @@ impl ProjectStore {
         for clip in clips {
             timeline.clips.push(clip?);
         }
-        let mut sub_stmt = self.conn.prepare(
-            "SELECT * FROM subtitles WHERE timeline_id=?1 ORDER BY start_ms ASC",
-        )?;
+        let mut sub_stmt = self
+            .conn
+            .prepare("SELECT * FROM subtitles WHERE timeline_id=?1 ORDER BY start_ms ASC")?;
         let subtitles = sub_stmt.query_map(params![timeline.id], map_subtitle)?;
         for subtitle in subtitles {
             timeline.subtitles.push(subtitle?);
@@ -43,6 +43,7 @@ impl ProjectStore {
             bpm,
             beat_grid_ms,
             beat_offset_ms,
+            clear_beats,
         } = patch;
         let mut timeline = self.timeline()?;
         if let Some(v) = name {
@@ -83,6 +84,11 @@ impl ProjectStore {
         }
         if let Some(v) = music_volume {
             timeline.music_volume = v.clamp(0.0, 2.0);
+        }
+        if clear_beats {
+            timeline.bpm = None;
+            timeline.beat_grid_ms = Vec::new();
+            timeline.beat_offset_ms = 0;
         }
         if let Some(v) = bpm {
             timeline.bpm = Some(v.clamp(20.0, 300.0));
@@ -303,6 +309,7 @@ impl ProjectStore {
             bpm: None,
             beat_grid_ms: None,
             beat_offset_ms: None,
+            clear_beats: false,
         })
     }
 

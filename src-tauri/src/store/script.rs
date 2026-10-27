@@ -80,7 +80,10 @@ impl ProjectStore {
 
         let mut shots_by_scene: HashMap<String, Vec<Shot>> = HashMap::new();
         for shot in shots {
-            shots_by_scene.entry(shot.scene_id.clone()).or_default().push(shot);
+            shots_by_scene
+                .entry(shot.scene_id.clone())
+                .or_default()
+                .push(shot);
         }
         for scene in &mut scenes {
             if let Some(mut list) = shots_by_scene.remove(&scene.id) {
@@ -220,7 +223,13 @@ impl ProjectStore {
     pub fn previous_shot(&self, shot_id: &str) -> AppResult<Option<Shot>> {
         let shots = self.shots_in_order()?;
         let idx = shots.iter().position(|s| s.id == shot_id);
-        Ok(idx.and_then(|i| if i == 0 { None } else { Some(shots[i - 1].clone()) }))
+        Ok(idx.and_then(|i| {
+            if i == 0 {
+                None
+            } else {
+                Some(shots[i - 1].clone())
+            }
+        }))
     }
 
     pub fn apply_generated_script(
@@ -526,8 +535,10 @@ impl ProjectStore {
             ],
         )?;
         if let Some(ids) = input.character_ids {
-            self.conn
-                .execute("DELETE FROM shot_characters WHERE shot_id=?1", params![shot_id])?;
+            self.conn.execute(
+                "DELETE FROM shot_characters WHERE shot_id=?1",
+                params![shot_id],
+            )?;
             for character_id in ids {
                 self.get_character(&character_id)?;
                 self.conn.execute(
@@ -599,7 +610,8 @@ impl ProjectStore {
             "DELETE FROM timeline_clips WHERE shot_id=?1",
             params![shot_id],
         )?;
-        self.conn.execute("DELETE FROM shots WHERE id=?1", params![shot_id])?;
+        self.conn
+            .execute("DELETE FROM shots WHERE id=?1", params![shot_id])?;
         self.touch()?;
         Ok(())
     }
@@ -616,4 +628,3 @@ impl ProjectStore {
         Ok(())
     }
 }
-

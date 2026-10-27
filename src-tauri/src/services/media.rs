@@ -18,6 +18,7 @@ pub struct MediaProbe {
     pub width: Option<i64>,
     pub height: Option<i64>,
     pub duration_ms: Option<i64>,
+    pub has_audio: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +27,8 @@ pub struct RenderClip {
     pub is_image: bool,
     pub in_ms: i64,
     pub out_ms: i64,
+    pub has_audio: bool,
+    pub muted: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +78,11 @@ impl Ffmpeg {
             .or_else(|| bundled_binary("ffmpeg"))
             .or_else(|| which("ffmpeg"))?;
         let ffprobe = {
-            let sibling = ffmpeg.with_file_name(if cfg!(windows) { "ffprobe.exe" } else { "ffprobe" });
+            let sibling = ffmpeg.with_file_name(if cfg!(windows) {
+                "ffprobe.exe"
+            } else {
+                "ffprobe"
+            });
             if sibling.is_file() {
                 Some(sibling)
             } else {
@@ -141,15 +148,25 @@ impl Ffmpeg {
         let video = value
             .get("streams")
             .and_then(|v| v.as_array())
-            .and_then(|streams| streams.iter().find(|s| s.get("codec_type").and_then(|c| c.as_str()) == Some("video")));
+            .and_then(|streams| {
+                streams
+                    .iter()
+                    .find(|s| s.get("codec_type").and_then(|c| c.as_str()) == Some("video"))
+            });
+        let has_audio = value
+            .get("streams")
+            .and_then(|v| v.as_array())
+            .map(|streams| {
+                streams
+                    .iter()
+                    .any(|s| s.get("codec_type").and_then(|c| c.as_str()) == Some("audio"))
+            })
+            .unwrap_or(false);
         MediaProbe {
-            width: video
-                .and_then(|s| s.get("width"))
-                .and_then(|v| v.as_i64()),
-            height: video
-                .and_then(|s| s.get("height"))
-                .and_then(|v| v.as_i64()),
+            width: video.and_then(|s| s.get("width")).and_then(|v| v.as_i64()),
+            height: video.and_then(|s| s.get("height")).and_then(|v| v.as_i64()),
             duration_ms,
+            has_audio,
         }
     }
 
@@ -192,6 +209,7 @@ impl Ffmpeg {
             width,
             height,
             duration_ms,
+            has_audio: text.contains("Audio:"),
         }
     }
 
@@ -307,11 +325,7 @@ impl Ffmpeg {
         if let Some(parent) = plan.output.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let total_ms: i64 = plan
-            .clips
-            .iter()
-            .map(|c| (c.out_ms - c.in_ms).max(1))
-            .sum();
+        let total_ms: i64 = plan.clips.iter().map(|c| (c.out_ms - c.in_ms).max(1)).sum();
         let mut args: Vec<String> = vec!["-y".into()];
         for clip in &plan.clips {
             if clip.is_image {
@@ -369,6 +383,28 @@ impl Ffmpeg {
             plan.clips.len()
         ));
 
+        let mut audio_inputs = String::new();
+        for (index, clip) in plan.clips.iter().enumerate() {
+            let start = clip.in_ms.max(0) as f64 / 1000.0;
+            let duration = (clip.out_ms - clip.in_ms).max(1) as f64 / 1000.0;
+            if clip.has_audio {
+                let volume = if clip.muted { 0.0 } else { 1.0 };
+                filters.push(format!(
+                    "[{index}:a]atrim=start={start:.3}:end={:.3},asetpts=PTS-STARTPTS,aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,apad,atrim=0:{duration:.3},volume={volume:.2}[a{index}]",
+                    start + duration
+                ));
+            } else {
+                filters.push(format!(
+                    "anullsrc=r=48000:cl=stereo,atrim=0:{duration:.3},asetpts=PTS-STARTPTS[a{index}]"
+                ));
+            }
+            audio_inputs.push_str(&format!("[a{index}]"));
+        }
+        filters.push(format!(
+            "{audio_inputs}concat=n={}:v=0:a=1[acat]",
+            plan.clips.len()
+        ));
+
         let font = if cfg!(target_os = "macos") {
             "PingFang SC"
         } else if cfg!(windows) {
@@ -387,16 +423,22 @@ impl Ffmpeg {
         } else {
             filters.push("[vcat]null[vout]".into());
         }
+        let mix_count = 2 + plan.voices.len();
+        // amix normalises by input count on every FFmpeg we ship, but the
+        // `normalize` option only exists from 4.4 (Windows bundles 4.1).
+        // Pre-scale by N so the default averaging preserves intended levels.
+        filters.push(format!("[acat]volume={mix_count}[acatmix]"));
         filters.push(format!(
             "[{music_index}:a]volume={:.2}[music]",
-            plan.music_volume.clamp(0.0, 2.0)
+            (plan.music_volume.clamp(0.0, 2.0) * mix_count as f64).min(6.0)
         ));
-        let mut mix_labels = vec!["[music]".to_string()];
+        let mut mix_labels = vec!["[acatmix]".to_string(), "[music]".to_string()];
         for (index, voice) in plan.voices.iter().enumerate() {
             let input = music_index + 1 + index;
             let delay = voice.start_ms.max(0);
             filters.push(format!(
-                "[{input}:a]adelay={delay}|{delay},volume=1.0[voice{index}]"
+                "[{input}:a]adelay={delay}|{delay},volume={}[voice{index}]",
+                mix_count
             ));
             mix_labels.push(format!("[voice{index}]"));
         }
@@ -404,7 +446,7 @@ impl Ffmpeg {
             filters.push("[music]anull[aout]".into());
         } else {
             filters.push(format!(
-                "{}amix=inputs={}:duration=longest:dropout_transition=0:normalize=0[aout]",
+                "{}amix=inputs={}:duration=longest:dropout_transition=0[aout]",
                 mix_labels.concat(),
                 mix_labels.len()
             ));
@@ -459,7 +501,10 @@ impl Ffmpeg {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
-        let stdout = child.stdout.take().ok_or_else(|| AppError::Message("ffmpeg pipe unavailable".into()))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| AppError::Message("ffmpeg pipe unavailable".into()))?;
         let stderr = child.stderr.take();
         let stderr_task = tokio::spawn(async move {
             let mut buffer = String::new();
@@ -491,7 +536,14 @@ impl Ffmpeg {
         if !status.success() {
             return Err(AppError::Message(format!(
                 "FFmpeg export failed: {}",
-                stderr.chars().rev().take(900).collect::<String>().chars().rev().collect::<String>()
+                stderr
+                    .chars()
+                    .rev()
+                    .take(900)
+                    .collect::<String>()
+                    .chars()
+                    .rev()
+                    .collect::<String>()
             )));
         }
         let probe = self.probe(&plan.output);
@@ -515,6 +567,7 @@ pub fn build_render_plan(
     options: &ExportOptions,
 ) -> AppResult<RenderPlan> {
     let timeline = store.timeline()?;
+    let probe_tool = Ffmpeg::discover(settings);
     let mut clips = Vec::new();
     for clip in &timeline.clips {
         let Some(asset_id) = &clip.asset_id else {
@@ -525,11 +578,21 @@ pub fn build_render_plan(
         if !path.exists() {
             continue;
         }
+        let probe = if asset.kind == "image" {
+            MediaProbe::default()
+        } else {
+            probe_tool
+                .as_ref()
+                .map(|ffmpeg| ffmpeg.probe(&path))
+                .unwrap_or_default()
+        };
         clips.push(RenderClip {
             path,
             is_image: asset.kind == "image",
             in_ms: clip.in_ms,
             out_ms: clip.out_ms,
+            has_audio: probe.has_audio,
+            muted: clip.muted,
         });
     }
     if clips.is_empty() {
@@ -577,6 +640,17 @@ pub fn build_render_plan(
     let mut voices = Vec::new();
     let mut cursor = 0_i64;
     for clip in &timeline.clips {
+        // Keep the voice cursor aligned with clips the renderer actually emits,
+        // otherwise a missing source file shifts every later line.
+        let Some(asset_id) = &clip.asset_id else {
+            continue;
+        };
+        let Ok(asset) = store.get_asset(asset_id) else {
+            continue;
+        };
+        if !Path::new(&asset.abs_path).exists() {
+            continue;
+        }
         if let Some(shot_id) = &clip.shot_id {
             if let Ok(shot) = store.get_shot(shot_id) {
                 if let Some(voice_asset_id) = &shot.voice_asset_id {
@@ -665,10 +739,7 @@ fn bundled_binary(name: &str) -> Option<PathBuf> {
     } else {
         name.to_string()
     };
-    let candidates = [
-        dir.join(&file),
-        dir.parent()?.join("Resources").join(&file),
-    ];
+    let candidates = [dir.join(&file), dir.parent()?.join("Resources").join(&file)];
     candidates.into_iter().find(|path| path.is_file())
 }
 

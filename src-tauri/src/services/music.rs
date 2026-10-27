@@ -158,7 +158,9 @@ pub async fn import_track(
         ));
     }
     if !track.download_url.starts_with("https://") && !track.download_url.starts_with("http://") {
-        return Err(AppError::Invalid("music download URL must be HTTP(S)".into()));
+        return Err(AppError::Invalid(
+            "music download URL must be HTTP(S)".into(),
+        ));
     }
     let client = providers::client()?;
     let response = client.get(&track.download_url).send().await?;
@@ -188,7 +190,13 @@ pub async fn import_track(
     std::fs::write(&abs, &bytes)?;
     let duration = media::Ffmpeg::discover(&settings::load(paths))
         .and_then(|ffmpeg| ffmpeg.probe(&abs).duration_ms)
-        .or_else(|| if track.duration_ms > 0 { Some(track.duration_ms) } else { None });
+        .or_else(|| {
+            if track.duration_ms > 0 {
+                Some(track.duration_ms)
+            } else {
+                None
+            }
+        });
     let asset = store.insert_asset(NewAsset {
         kind: "audio".into(),
         name: track.title.clone(),
@@ -223,12 +231,14 @@ pub async fn analyze_beats(
     let (asset, duration) = {
         let store = ProjectStore::open(paths, project_id)?;
         let timeline = store.timeline()?;
-        let asset_id = timeline
-            .music_asset_id
-            .ok_or_else(|| AppError::Invalid("attach a music track before analyzing beats".into()))?;
+        let asset_id = timeline.music_asset_id.ok_or_else(|| {
+            AppError::Invalid("attach a music track before analyzing beats".into())
+        })?;
         let asset = store.get_asset(&asset_id)?;
         if asset.kind != "audio" {
-            return Err(AppError::Invalid("timeline music is not an audio asset".into()));
+            return Err(AppError::Invalid(
+                "timeline music is not an audio asset".into(),
+            ));
         }
         let duration = asset.duration_ms.unwrap_or(0);
         (asset, duration)
@@ -277,9 +287,7 @@ pub fn auto_beat_sync(store: &mut ProjectStore) -> AppResult<BeatSyncResult> {
         .bpm
         .filter(|bpm| *bpm > 20.0)
         .map(|bpm| 60_000.0 / bpm)
-        .unwrap_or_else(|| {
-            (timeline.beat_grid_ms[1] - timeline.beat_grid_ms[0]).max(1) as f64
-        });
+        .unwrap_or_else(|| (timeline.beat_grid_ms[1] - timeline.beat_grid_ms[0]).max(1) as f64);
     let minimum = (beat_interval * 2.0).max(900.0) as i64;
     let mut cursor = 0_i64;
     let mut aligned = 0_usize;
@@ -344,11 +352,15 @@ pub fn attach_music(
 ) -> AppResult<Timeline> {
     let asset = store.get_asset(asset_id)?;
     if asset.kind != "audio" {
-        return Err(AppError::Invalid("only audio assets can be used as music".into()));
+        return Err(AppError::Invalid(
+            "only audio assets can be used as music".into(),
+        ));
     }
     store.update_timeline(TimelinePatch {
         music_asset_id: Some(asset.id),
         music_volume: Some(volume.unwrap_or(0.8).clamp(0.0, 2.0)),
+        // Beat data belongs to the track it was analysed from; drop it on change.
+        clear_beats: true,
         ..Default::default()
     })
 }
@@ -462,8 +474,7 @@ fn analyze_pcm(samples: &[f32], sample_rate: u32, duration_ms: i64) -> PcmAnalys
     let waveform = waveform(samples, 160);
     PcmAnalysis {
         bpm: (bpm * 10.0).round() / 10.0,
-        confidence: (best_corr * 0.75 + (best_phase.max(0.0).min(1.0)) * 0.25)
-            .clamp(0.0, 0.99),
+        confidence: (best_corr * 0.75 + (best_phase.max(0.0).min(1.0)) * 0.25).clamp(0.0, 0.99),
         offset_ms: beat_grid_ms[0],
         beat_grid_ms,
         waveform,
@@ -553,7 +564,10 @@ mod tests {
 
     #[test]
     fn license_labels_are_conservative() {
-        assert_eq!(license_label("http://creativecommons.org/licenses/by/4.0/"), "CC BY");
+        assert_eq!(
+            license_label("http://creativecommons.org/licenses/by/4.0/"),
+            "CC BY"
+        );
         assert!(license_label("http://creativecommons.org/licenses/by/4.0/").contains("BY"));
         assert_eq!(
             license_label("http://creativecommons.org/publicdomain/zero/1.0/"),

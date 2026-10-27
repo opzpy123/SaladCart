@@ -43,6 +43,8 @@ async fn ffmpeg_renders_a_real_mp4() {
             is_image: false,
             in_ms: 0,
             out_ms: 1_200,
+            has_audio: false,
+            muted: false,
         });
     }
     let output = temp.path().join("export.mp4");
@@ -97,4 +99,64 @@ async fn ffmpeg_renders_a_real_mp4() {
     ffmpeg.render(&voice_plan, |_| {}).await.unwrap();
     assert!(voice_output.exists());
     assert!(std::fs::metadata(&voice_output).unwrap().len() > 2_000);
+}
+
+#[tokio::test]
+async fn ffmpeg_mutes_source_audio_in_the_mix() {
+    let Some(ffmpeg) = Ffmpeg::discover(&settings::default_settings()) else {
+        eprintln!("skipping: FFmpeg not available");
+        return;
+    };
+    let temp = tempfile::tempdir().unwrap();
+    let clip_path = temp.path().join("with-audio.mp4");
+    let status = std::process::Command::new(&ffmpeg.program)
+        .args([
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=blue:s=320x240:d=1.2",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:duration=1.2",
+            "-shortest",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+        ])
+        .arg(&clip_path)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    assert!(ffmpeg.probe(&clip_path).has_audio);
+
+    let output = temp.path().join("muted-export.mp4");
+    let plan = RenderPlan {
+        clips: vec![RenderClip {
+            path: clip_path,
+            is_image: false,
+            in_ms: 0,
+            out_ms: 1_200,
+            has_audio: true,
+            muted: true,
+        }],
+        output: output.clone(),
+        width: 320,
+        height: 240,
+        fps: 24,
+        subtitles: None,
+        music: None,
+        music_volume: 0.8,
+        voices: vec![],
+        metadata: vec![],
+    };
+    ffmpeg.render(&plan, |_| {}).await.unwrap();
+    assert!(output.exists());
+    let probe = ffmpeg.probe(&output);
+    assert!(probe.has_audio);
+    assert!(probe.duration_ms.unwrap_or(0) >= 1_000);
 }

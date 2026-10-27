@@ -85,6 +85,7 @@ export function NewProjectDialog() {
         styleBible: null,
       },
       generateAfter,
+      episodes,
     );
   };
 

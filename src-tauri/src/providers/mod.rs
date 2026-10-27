@@ -38,7 +38,11 @@ pub fn error_from_response(status: reqwest::StatusCode, body: &str) -> AppError 
                         .or_else(|| e.as_str())
                 })
                 .map(str::to_string)
-                .or_else(|| v.get("message").and_then(|m| m.as_str()).map(str::to_string))
+                .or_else(|| {
+                    v.get("message")
+                        .and_then(|m| m.as_str())
+                        .map(str::to_string)
+                })
         })
         .unwrap_or_else(|| {
             let trimmed = body.trim();
@@ -89,12 +93,39 @@ pub async fn download(url: &str, dest: &Path) -> AppResult<()> {
 }
 
 pub fn sanitize_filename(name: &str, fallback: &str) -> String {
-    let name = name.trim().replace(['/', '\\', ':'], "-");
-    let name = name.trim_matches(['.', ' ']);
-    if name.is_empty() {
-        fallback.to_string()
+    let cleaned: String = name
+        .trim()
+        .chars()
+        .map(|ch| {
+            if ch.is_control() || matches!(ch, '/' | '\\' | ':' | '<' | '>' | '"' | '|' | '?') {
+                '-'
+            } else {
+                ch
+            }
+        })
+        .collect();
+    let cleaned = cleaned
+        .trim_matches(['.', ' '])
+        .chars()
+        .take(120)
+        .collect::<String>();
+    if cleaned.is_empty() {
+        return fallback.to_string();
+    }
+    let stem = cleaned
+        .split('.')
+        .next()
+        .unwrap_or(&cleaned)
+        .trim()
+        .to_ascii_uppercase();
+    let reserved = matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
+        || (stem.len() == 4
+            && (stem.starts_with("COM") || stem.starts_with("LPT"))
+            && stem[3..].chars().all(|ch| ch.is_ascii_digit()));
+    if reserved {
+        format!("saladcart-{cleaned}")
     } else {
-        name.chars().take(120).collect()
+        cleaned
     }
 }
 
@@ -171,5 +202,25 @@ pub fn sniff_image_mime(bytes: &[u8]) -> &'static str {
         "image/webp"
     } else {
         "image/png"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sanitize_filename;
+
+    #[test]
+    fn sanitizes_windows_invalid_and_reserved_names() {
+        assert_eq!(
+            sanitize_filename("雾港:第一集?.mp4", "fallback"),
+            "雾港-第一集-.mp4"
+        );
+        assert_eq!(
+            sanitize_filename("CON.mp4", "fallback"),
+            "saladcart-CON.mp4"
+        );
+        assert_eq!(sanitize_filename("lpt9", "fallback"), "saladcart-lpt9");
+        assert_eq!(sanitize_filename("  ...  ", "fallback"), "fallback");
+        assert_eq!(sanitize_filename("COM10", "fallback"), "COM10");
     }
 }

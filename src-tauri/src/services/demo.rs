@@ -230,7 +230,11 @@ pub async fn create(paths: &AppPaths, settings: &Settings) -> AppResult<ProjectS
         }
     }
 
-    let music = mock::music("rain-soaked mystery, restrained piano and low pulse", 24_000, Some(9))?;
+    let music = mock::music(
+        "rain-soaked mystery, restrained piano and low pulse",
+        24_000,
+        Some(9),
+    )?;
     let music_id = uuid::Uuid::new_v4().to_string();
     let music_rel = format!("assets/audio/{music_id}.wav");
     let music_abs = project_dir.join(&music_rel);

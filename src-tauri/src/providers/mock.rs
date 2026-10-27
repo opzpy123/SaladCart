@@ -79,7 +79,9 @@ pub fn image(request: &ImageRequest) -> AppResult<ImageResult> {
             } else if head <= 1.0 {
                 img.put_pixel(x, y, ink);
             }
-            if (head > 0.90 && head <= 1.0) || (y as f32 > shoulder_top && shoulder > 0.92 && shoulder <= 1.0) {
+            if (head > 0.90 && head <= 1.0)
+                || (y as f32 > shoulder_top && shoulder > 0.92 && shoulder <= 1.0)
+            {
                 img.put_pixel(x, y, rim);
             }
         }
@@ -101,8 +103,7 @@ pub fn image(request: &ImageRequest) -> AppResult<ImageResult> {
         let panel_h = (height as f32 * 0.22) as u32;
         draw_filled_rect_mut(
             &mut img,
-            imageproc::rect::Rect::at(0, (height - panel_h) as i32)
-                .of_size(width, panel_h),
+            imageproc::rect::Rect::at(0, (height - panel_h) as i32).of_size(width, panel_h),
             Rgba([12, 14, 11, 196]),
         );
         let title = ascii_title(&request.title);
@@ -194,9 +195,7 @@ pub fn music(prompt: &str, duration_ms: i64, seed: Option<i64>) -> AppResult<Moc
                 let t = (i - start) as f32 / sample_rate as f32;
                 let env = (t / 0.08).min(1.0) * (-(t / 2.4)).exp();
                 let wobble = 1.0 + 0.06 * (t * 0.7 + n as f32).sin();
-                samples[i] += (2.0 * std::f32::consts::PI * freq * t * wobble).sin()
-                    * env
-                    * 0.055;
+                samples[i] += (2.0 * std::f32::consts::PI * freq * t * wobble).sin() * env * 0.055;
             }
         }
     }
@@ -212,8 +211,7 @@ pub fn music(prompt: &str, duration_ms: i64, seed: Option<i64>) -> AppResult<Moc
                 let t = i as f32 / sample_rate as f32;
                 let env = (-(t / 0.06)).exp();
                 let freq = 105.0 - 55.0 * (t / 0.2).min(1.0);
-                samples[start + i] +=
-                    (2.0 * std::f32::consts::PI * freq * t).sin() * env * 0.42;
+                samples[start + i] += (2.0 * std::f32::consts::PI * freq * t).sin() * env * 0.42;
             }
         } else {
             let len = (sample_rate as f64 * 0.14) as usize;

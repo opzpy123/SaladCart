@@ -4,9 +4,9 @@ use crate::paths::AppPaths;
 use crate::settings;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tauri::async_runtime::JoinHandle;
 use tauri::Manager;
 use tokio::sync::Semaphore;
-use tokio::task::JoinHandle;
 
 pub struct JobRuntime {
     pub semaphore: Arc<Semaphore>,

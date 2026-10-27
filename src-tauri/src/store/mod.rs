@@ -80,14 +80,23 @@ impl ProjectStore {
     pub fn create(paths: &AppPaths, input: &CreateProjectInput) -> AppResult<Self> {
         let id = uuid::Uuid::new_v4().to_string();
         let dir = paths.project_dir(&id)?;
-        for sub in ["assets/images", "assets/videos", "assets/audio", "thumbs", "exports"] {
+        for sub in [
+            "assets/images",
+            "assets/videos",
+            "assets/audio",
+            "thumbs",
+            "exports",
+        ] {
             std::fs::create_dir_all(dir.join(sub))?;
         }
         let db_path = dir.join("project.db");
         let conn = db::open(&db_path)?;
         let now = now_iso();
         let aspect = normalize_aspect(&input.aspect_ratio);
-        let style = input.style_bible.clone().unwrap_or_else(|| preset_style(input.style_preset.as_deref()));
+        let style = input
+            .style_bible
+            .clone()
+            .unwrap_or_else(|| preset_style(input.style_preset.as_deref()));
         let name = if input.name.trim().is_empty() {
             "未命名漫剧".to_string()
         } else {
@@ -143,7 +152,13 @@ impl ProjectStore {
         if exists.is_none() {
             return Err(AppError::NotFound(format!("project {project_id}")));
         }
-        for sub in ["assets/images", "assets/videos", "assets/audio", "thumbs", "exports"] {
+        for sub in [
+            "assets/images",
+            "assets/videos",
+            "assets/audio",
+            "thumbs",
+            "exports",
+        ] {
             std::fs::create_dir_all(dir.join(sub))?;
         }
         let store = Self {
@@ -225,9 +240,8 @@ impl ProjectStore {
     }
 
     pub fn counts(&self) -> AppResult<ProjectCounts> {
-        let one = |sql: &str| -> AppResult<i64> {
-            Ok(self.conn.query_row(sql, [], |row| row.get(0))?)
-        };
+        let one =
+            |sql: &str| -> AppResult<i64> { Ok(self.conn.query_row(sql, [], |row| row.get(0))?) };
         Ok(ProjectCounts {
             characters: one("SELECT COUNT(*) FROM characters")?,
             episodes: one("SELECT COUNT(*) FROM episodes")?,
@@ -299,10 +313,8 @@ impl ProjectStore {
     }
 
     pub fn touch(&self) -> AppResult<()> {
-        self.conn.execute(
-            "UPDATE project SET updated_at=?1",
-            params![now_iso()],
-        )?;
+        self.conn
+            .execute("UPDATE project SET updated_at=?1", params![now_iso()])?;
         Ok(())
     }
 

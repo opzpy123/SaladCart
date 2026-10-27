@@ -49,11 +49,7 @@ impl ProjectStore {
 
     pub fn get_job(&self, job_id: &str) -> AppResult<GenerationJob> {
         self.conn
-            .query_row(
-                "SELECT * FROM jobs WHERE id=?1",
-                params![job_id],
-                map_job,
-            )
+            .query_row("SELECT * FROM jobs WHERE id=?1", params![job_id], map_job)
             .optional()?
             .or_not_found("job")
     }
@@ -92,7 +88,8 @@ impl ProjectStore {
     }
 
     pub fn finish_job(&self, job_id: &str, finish: FinishJob) -> AppResult<GenerationJob> {
-        if finish.status != "succeeded" && finish.status != "failed" && finish.status != "canceled" {
+        if finish.status != "succeeded" && finish.status != "failed" && finish.status != "canceled"
+        {
             return Err(AppError::Invalid("invalid terminal job status".into()));
         }
         self.conn.execute(
@@ -121,7 +118,11 @@ impl ProjectStore {
         self.get_job(job_id)
     }
 
-    pub fn jobs_for_target(&self, target_type: &str, target_id: &str) -> AppResult<Vec<GenerationJob>> {
+    pub fn jobs_for_target(
+        &self,
+        target_type: &str,
+        target_id: &str,
+    ) -> AppResult<Vec<GenerationJob>> {
         let mut stmt = self.conn.prepare(
             "SELECT * FROM jobs WHERE target_type=?1 AND target_id=?2 ORDER BY created_at DESC LIMIT 20",
         )?;

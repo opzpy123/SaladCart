@@ -8,7 +8,12 @@ use std::path::Path;
 pub fn default_settings() -> Settings {
     let mut providers = Vec::new();
     for (id, label, base, model) in [
-        ("mock-llm", "Mock 编剧 (离线)", "local://mock", "saladcart-mock-llm"),
+        (
+            "mock-llm",
+            "Mock 编剧 (离线)",
+            "local://mock",
+            "saladcart-mock-llm",
+        ),
         (
             "openai-llm",
             "OpenAI / 兼容接口",
@@ -353,7 +358,10 @@ pub fn resolve_secret(provider: &crate::models::ProviderProfile) -> AppResult<St
     )))
 }
 
-pub fn find_provider<'a>(settings: &'a Settings, id: &str) -> AppResult<&'a crate::models::ProviderProfile> {
+pub fn find_provider<'a>(
+    settings: &'a Settings,
+    id: &str,
+) -> AppResult<&'a crate::models::ProviderProfile> {
     settings
         .providers
         .iter()
@@ -361,7 +369,10 @@ pub fn find_provider<'a>(settings: &'a Settings, id: &str) -> AppResult<&'a crat
         .ok_or_else(|| AppError::NotFound(format!("provider {id}")))
 }
 
-pub fn update_persisted(paths: &AppPaths, update: impl FnOnce(&mut Settings)) -> AppResult<Settings> {
+pub fn update_persisted(
+    paths: &AppPaths,
+    update: impl FnOnce(&mut Settings),
+) -> AppResult<Settings> {
     let mut settings = load(paths);
     update(&mut settings);
     save(paths, &settings)?;

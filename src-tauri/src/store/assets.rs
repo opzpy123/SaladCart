@@ -1,7 +1,7 @@
 use crate::error::{AppError, AppResult, OptionExt};
 use crate::models::*;
 use crate::store::mappers::{map_asset, now_iso};
-use crate::store::{ProjectStore, ensure_asset_rel};
+use crate::store::{ensure_asset_rel, ProjectStore};
 use rusqlite::{params, OptionalExtension};
 
 pub fn asset_subdir(kind: &str) -> &'static str {
@@ -117,20 +117,34 @@ impl ProjectStore {
         // is the authoritative fast path.
         let asset_id: Option<String> = match target_type {
             "character" => {
-                let column = if kind == "video" { return Ok(None) } else { "reference_asset_id" };
-                self.conn.query_row(
-                    &format!("SELECT {column} FROM characters WHERE id=?1"),
-                    params![target_id],
-                    |row| row.get(0),
-                ).optional()?.flatten()
+                let column = if kind == "video" {
+                    return Ok(None);
+                } else {
+                    "reference_asset_id"
+                };
+                self.conn
+                    .query_row(
+                        &format!("SELECT {column} FROM characters WHERE id=?1"),
+                        params![target_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .flatten()
             }
             "shot" => {
-                let column = if kind == "video" { "video_asset_id" } else { "image_asset_id" };
-                self.conn.query_row(
-                    &format!("SELECT {column} FROM shots WHERE id=?1"),
-                    params![target_id],
-                    |row| row.get(0),
-                ).optional()?.flatten()
+                let column = if kind == "video" {
+                    "video_asset_id"
+                } else {
+                    "image_asset_id"
+                };
+                self.conn
+                    .query_row(
+                        &format!("SELECT {column} FROM shots WHERE id=?1"),
+                        params![target_id],
+                        |row| row.get(0),
+                    )
+                    .optional()?
+                    .flatten()
             }
             _ => None,
         };
@@ -166,10 +180,7 @@ impl ProjectStore {
     pub fn import_asset(&mut self, input: ImportAssetInput) -> AppResult<Asset> {
         let source = std::path::Path::new(&input.source_path);
         if !source.is_file() {
-            return Err(AppError::NotFound(format!(
-                "file {}",
-                input.source_path
-            )));
+            return Err(AppError::NotFound(format!("file {}", input.source_path)));
         }
         let ext = source
             .extension()

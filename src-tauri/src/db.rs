@@ -237,7 +237,12 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
     ensure_column(conn, "assets", "license_url", "license_url TEXT")?;
     ensure_column(conn, "assets", "attribution", "attribution TEXT")?;
     ensure_column(conn, "assets", "source_url", "source_url TEXT")?;
-    ensure_column(conn, "jobs", "project_id", "project_id TEXT NOT NULL DEFAULT ''")?;
+    ensure_column(
+        conn,
+        "jobs",
+        "project_id",
+        "project_id TEXT NOT NULL DEFAULT ''",
+    )?;
     ensure_column(conn, "shots", "voice_asset_id", "voice_asset_id TEXT")?;
     conn.execute(
         "UPDATE jobs SET project_id=(SELECT id FROM project LIMIT 1) WHERE project_id=''",

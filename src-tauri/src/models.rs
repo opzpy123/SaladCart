@@ -530,6 +530,10 @@ pub struct GenerationRequest {
     pub model: Option<String>,
     #[serde(default)]
     pub options: GenerationOptions,
+    /// Frozen at enqueue time so queued work pays for the prompt that was
+    /// previewed, even if the project changes while it waits.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compiled: Option<ContextPreview>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -601,6 +605,7 @@ pub struct TimelinePatch {
     pub bpm: Option<f64>,
     pub beat_grid_ms: Option<Vec<i64>>,
     pub beat_offset_ms: Option<i64>,
+    pub clear_beats: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

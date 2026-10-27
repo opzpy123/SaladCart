@@ -109,7 +109,8 @@ JSON SHAPE
     }
     if script.characters.is_empty() {
         return Err(AppError::Provider(
-            "The model returned no characters. Character consistency needs at least one character.".into(),
+            "The model returned no characters. Character consistency needs at least one character."
+                .into(),
         ));
     }
     if script.style_bible.visual_style.trim().is_empty() {
@@ -166,15 +167,19 @@ fn mock_script(request: &GenerateScriptRequest, project: &Project) -> GeneratedS
     ];
     let characters = names
         .iter()
-        .map(|(name, role, description, appearance, personality, voice, traits)| GeneratedCharacter {
-            name: name.to_string(),
-            role: role.to_string(),
-            description: description.to_string(),
-            appearance: appearance.to_string(),
-            personality: personality.to_string(),
-            voice: voice.to_string(),
-            locked_traits: traits.iter().map(|t| t.to_string()).collect(),
-        })
+        .map(
+            |(name, role, description, appearance, personality, voice, traits)| {
+                GeneratedCharacter {
+                    name: name.to_string(),
+                    role: role.to_string(),
+                    description: description.to_string(),
+                    appearance: appearance.to_string(),
+                    personality: personality.to_string(),
+                    voice: voice.to_string(),
+                    locked_traits: traits.iter().map(|t| t.to_string()).collect(),
+                }
+            },
+        )
         .collect();
 
     let episode_count = request.episodes.clamp(1, 3) as usize;
@@ -290,7 +295,15 @@ fn mock_script(request: &GenerateScriptRequest, project: &Project) -> GeneratedS
             });
         }
         episodes.push(GeneratedEpisode {
-            title: format!("第{}集 · {}", episode_index + 1, if episode_index == 0 { "雨中的钥匙" } else { "被剪掉的人" }),
+            title: format!(
+                "第{}集 · {}",
+                episode_index + 1,
+                if episode_index == 0 {
+                    "雨中的钥匙"
+                } else {
+                    "被剪掉的人"
+                }
+            ),
             summary: format!(
                 "第{}集：{} 沈知遥与顾临川被迫结盟，阿箬的条件揭开了十年前失踪案的第一个缺口。",
                 episode_index + 1,

@@ -87,6 +87,8 @@ pub fn enqueue_generation(
     let store = ProjectStore::open(&state.paths, project_id)?;
     let compiled = context::compile(&store, &settings, &request)?;
     let summary = format!("{} · {}", compiled.title, compiled.provider_label);
+    let mut request = request;
+    request.compiled = Some(compiled.clone());
     let job = new_job(
         project_id,
         JobSpec {
@@ -268,7 +270,7 @@ fn spawn_job(app: AppHandle, state: &AppState, job: &GenerationJob) {
     let kind = job.kind.clone();
     let task_job_id = job_id.clone();
     let task_runtime = runtime.clone();
-    let handle = tokio::spawn(async move {
+    let handle = tauri::async_runtime::spawn(async move {
         let permit = task_runtime.semaphore.clone().acquire_owned().await;
         match permit {
             Ok(_permit) => {
@@ -319,7 +321,13 @@ fn progress(
     Ok(())
 }
 
-fn mark_failed(app: &AppHandle, paths: &AppPaths, project_id: &str, job_id: &str, error: &AppError) {
+fn mark_failed(
+    app: &AppHandle,
+    paths: &AppPaths,
+    project_id: &str,
+    job_id: &str,
+    error: &AppError,
+) {
     if let Ok(store) = ProjectStore::open(paths, project_id) {
         if let Ok(job) = store.finish_job(
             job_id,
@@ -360,9 +368,23 @@ async fn run_script(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
         (job, request, profile, project)
     };
     let secret = secret_for(&profile)?;
-    progress(app, paths, &job.project_id, job_id, 12, "building story bible")?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        job_id,
+        12,
+        "building story bible",
+    )?;
     let generated = script::generate(&profile, secret.as_deref(), &request, &project).await?;
-    progress(app, paths, &job.project_id, job_id, 72, "saving episodes and shots")?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        job_id,
+        72,
+        "saving episodes and shots",
+    )?;
     let mut store = ProjectStore::open_by_job(paths, job_id)?;
     let stats = store.apply_generated_script(generated, &request)?;
     let job = store.finish_job(
@@ -392,14 +414,29 @@ enum StartFrame {
 }
 
 async fn run_generation(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResult<()> {
-    let (job, request, compiled, profile, settings, start_frame, refs, project_dir, aspect, project_width, project_height) = {
+    let (
+        job,
+        request,
+        compiled,
+        profile,
+        settings,
+        start_frame,
+        refs,
+        project_dir,
+        aspect,
+        project_width,
+        project_height,
+    ) = {
         let store = ProjectStore::open_by_job(paths, job_id)?;
         let job = store.start_job(job_id)?;
         emit_job(app, &job);
         let request: GenerationRequest = serde_json::from_value(job.request.clone())
             .map_err(|e| AppError::Invalid(format!("bad generation request: {e}")))?;
         let settings = settings::load(paths);
-        let compiled = context::compile(&store, &settings, &request)?;
+        let compiled = match request.compiled.clone() {
+            Some(compiled) => compiled,
+            None => context::compile(&store, &settings, &request)?,
+        };
         let profile = settings::find_provider(&settings, &compiled.provider_id)?.clone();
         let refs = compiled
             .character_refs
@@ -417,8 +454,8 @@ async fn run_generation(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppR
             })
             .collect::<Vec<_>>();
         let start_frame = resolve_start_frame(&store, &request, &compiled)?;
-        let project = store.project()?;
-        let (w, h) = dimensions_for(&project.aspect_ratio);
+        let aspect = compiled.aspect_ratio.clone();
+        let (w, h) = dimensions_for(&aspect);
         (
             job,
             request,
@@ -428,7 +465,7 @@ async fn run_generation(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppR
             start_frame,
             refs,
             store.dir.clone(),
-            project.aspect_ratio,
+            aspect,
             w,
             h,
         )
@@ -488,6 +525,15 @@ fn resolve_start_frame(
             return Ok(Some(StartFrame::Image(PathBuf::from(asset.abs_path))));
         }
     }
+    // A generated keyframe is the canonical start frame for its shot; without
+    // this the video job silently falls back to the previous shot or a portrait.
+    if let Some(asset_id) = &shot.image_asset_id {
+        if let Ok(asset) = store.get_asset(asset_id) {
+            if asset.kind == "image" {
+                return Ok(Some(StartFrame::Image(PathBuf::from(asset.abs_path))));
+            }
+        }
+    }
     if request.options.use_continuity {
         if let Some(previous_id) = &compiled.continuity_from_shot_id {
             if let Ok(previous) = store.get_shot(previous_id) {
@@ -531,7 +577,14 @@ async fn run_image_job(
     height: i64,
     refs: Vec<ImageRef>,
 ) -> AppResult<()> {
-    progress(app, paths, &job.project_id, &job.id, 12, "compiling generation context")?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        &job.id,
+        12,
+        "compiling generation context",
+    )?;
     let image_request = ImageRequest {
         model: compiled.model.clone(),
         prompt: compiled.user_prompt.clone(),
@@ -560,7 +613,14 @@ async fn run_image_job(
         .ok()
         .map(|_| thumb_rel.clone());
 
-    progress(app, paths, &job.project_id, &job.id, 82, "saving asset and linking to project")?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        &job.id,
+        82,
+        "saving asset and linking to project",
+    )?;
     let mut store = ProjectStore::open_by_job(paths, &job.id)?;
     let is_sheet = request
         .options
@@ -655,7 +715,7 @@ async fn run_video_job(
     secret: Option<&str>,
     settings: &Settings,
     start_frame: Option<StartFrame>,
-    _refs: Vec<ImageRef>,
+    refs: Vec<ImageRef>,
     project_dir: &Path,
     aspect: &str,
     width: i64,
@@ -690,7 +750,14 @@ async fn run_video_job(
         compiled.estimated_cost
     };
     let (video_path, video_id) = if profile.id.starts_with("mock-") {
-        progress(app, paths, &job.project_id, &job.id, 18, "rendering offline preview")?;
+        progress(
+            app,
+            paths,
+            &job.project_id,
+            &job.id,
+            18,
+            "rendering offline preview",
+        )?;
         let placeholder = image::generate(
             profile,
             None,
@@ -718,7 +785,14 @@ async fn run_video_job(
         raw_result = json!({"mock": true, "bpmHint": null});
         (abs, id)
     } else {
-        progress(app, paths, &job.project_id, &job.id, 14, "submitting to video provider")?;
+        progress(
+            app,
+            paths,
+            &job.project_id,
+            &job.id,
+            14,
+            "submitting to video provider",
+        )?;
         let video_request = VideoRequest {
             model: compiled.model.clone(),
             prompt: compiled.user_prompt.clone(),
@@ -728,7 +802,11 @@ async fn run_video_job(
             seed: request.options.seed,
             resolution: request.options.resolution.clone(),
             start_frame: frame_path.clone(),
-            references: Vec::new(),
+            references: refs
+                .iter()
+                .map(|reference| reference.path.clone())
+                .filter(|path| path.exists())
+                .collect(),
             title: compiled.title.clone(),
         };
         let mut task = video::submit(profile, secret, &video_request).await?;
@@ -771,11 +849,17 @@ async fn run_video_job(
                 "provider is rendering the shot",
             )?;
         }
-        let url = task
-            .output_url
-            .clone()
-            .ok_or_else(|| AppError::Provider(format!("{} finished without a video URL", profile.label)))?;
-        progress(app, paths, &job.project_id, &job.id, 88, "downloading video")?;
+        let url = task.output_url.clone().ok_or_else(|| {
+            AppError::Provider(format!("{} finished without a video URL", profile.label))
+        })?;
+        progress(
+            app,
+            paths,
+            &job.project_id,
+            &job.id,
+            88,
+            "downloading video",
+        )?;
         let id = uuid::Uuid::new_v4().to_string();
         let temp = project_dir.join(format!("assets/videos/{id}.download"));
         providers::download_with_auth(profile, secret, &url, &temp).await?;
@@ -830,7 +914,14 @@ async fn run_video_job(
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
 
-    progress(app, paths, &job.project_id, &job.id, 93, "linking take to shot")?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        &job.id,
+        93,
+        "linking take to shot",
+    )?;
     let mut store = ProjectStore::open_by_job(paths, &job.id)?;
     let previous_video = store.get_shot(&shot_id)?.video_asset_id;
     let parent_version = store.get_shot(&shot_id)?.version;
@@ -956,7 +1047,10 @@ async fn run_music(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResult
         seed: request.seed,
         version: 1,
         parent_asset_id: None,
-        license: Some(format!("{} generated audio — check provider terms", profile.label)),
+        license: Some(format!(
+            "{} generated audio — check provider terms",
+            profile.label
+        )),
         license_url: None,
         attribution: None,
         source_url: None,
@@ -1031,7 +1125,8 @@ async fn run_export(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
             *last = now;
         }
         if let Ok(store) = ProjectStore::open(&progress_paths, &progress_project) {
-            if let Ok(job) = store.update_job_progress(&progress_job, pct, "rendering with FFmpeg") {
+            if let Ok(job) = store.update_job_progress(&progress_job, pct, "rendering with FFmpeg")
+            {
                 let _ = progress_app.emit("job:update", job);
             }
         }
@@ -1041,7 +1136,7 @@ async fn run_export(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
     let mut store = ProjectStore::open_by_job(paths, &job.id)?;
     let rel = Path::new(&render.path)
         .strip_prefix(&store.dir)
-        .map(|p| p.to_string_lossy().to_string())
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_default();
     let size = std::fs::metadata(&render.path)
         .map(|m| m.len() as i64)
@@ -1117,5 +1212,99 @@ impl ProjectStore {
             }
         }
         found.ok_or_else(|| AppError::NotFound(format!("job {job_id}")))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::store::assets::NewAsset;
+    use serde_json::json;
+
+    #[test]
+    fn generated_keyframe_is_the_video_start_frame() {
+        let temp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(temp.path().to_path_buf()).unwrap();
+        let mut store = ProjectStore::create(
+            &paths,
+            &CreateProjectInput {
+                name: "keyframe".into(),
+                premise: "test".into(),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let generated: GeneratedScript = serde_json::from_value(json!({
+            "title": "keyframe",
+            "logline": "",
+            "synopsis": "",
+            "characters": [],
+            "episodes": [{
+                "title": "episode",
+                "scenes": [{
+                    "title": "scene",
+                    "shots": [{"title": "one"}, {"title": "two"}]
+                }]
+            }]
+        }))
+        .unwrap();
+        store
+            .apply_generated_script(generated, &GenerateScriptRequest::default())
+            .unwrap();
+        let snapshot = store.snapshot().unwrap();
+        let shots = &snapshot.episodes[0].scenes[0].shots;
+        assert_eq!(shots.len(), 2);
+        let target_id = shots[1].id.clone();
+
+        let rel = "assets/images/keyframe.png";
+        let abs = store.dir.join(rel);
+        std::fs::write(&abs, b"png").unwrap();
+        let asset = store
+            .insert_asset(NewAsset {
+                kind: "image".into(),
+                name: "keyframe".into(),
+                rel_path: rel.into(),
+                thumb_rel_path: None,
+                mime: "image/png".into(),
+                width: Some(128),
+                height: Some(128),
+                duration_ms: None,
+                source: "mock".into(),
+                provider_id: Some("mock-image".into()),
+                model: Some("mock".into()),
+                prompt: Some("keyframe".into()),
+                negative_prompt: None,
+                seed: None,
+                version: 1,
+                parent_asset_id: None,
+                license: None,
+                license_url: None,
+                attribution: None,
+                source_url: None,
+                status: "ready".into(),
+            })
+            .unwrap();
+        store
+            .attach_shot_asset(&target_id, &asset.id, "image", "mock-image", "mock", None)
+            .unwrap();
+
+        let request = GenerationRequest {
+            kind: "video".into(),
+            target_type: "shot".into(),
+            target_id: Some(target_id),
+            provider_id: Some("mock-video".into()),
+            model: None,
+            options: GenerationOptions::default(),
+            compiled: None,
+        };
+        let settings = settings::default_settings();
+        let compiled = context::compile(&store, &settings, &request).unwrap();
+        let start = resolve_start_frame(&store, &request, &compiled)
+            .unwrap()
+            .expect("a start frame");
+        match start {
+            StartFrame::Image(path) => assert_eq!(path, abs),
+            StartFrame::Video(..) => panic!("keyframe should be used instead of a video frame"),
+        }
     }
 }

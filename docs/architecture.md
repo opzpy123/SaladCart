@@ -101,7 +101,7 @@ All IDs are UUIDs. Times are ISO-8601 UTC strings; durations are integer millise
 - Character generation updates the character's reference asset; all shots using that character immediately see the new reference in their context preview.
 - Shot video generation reads: project style bible + character locked traits/references + scene text + shot description/camera/dialogue + continuity (previous shot summary and optional last-frame asset) + target format.
 - Assets are written under the project folder and registered transactionally. A failed file write never leaves a dangling asset row.
-- Timeline auto-assembly selects the newest approved (or latest successful) video per shot, in episode/scene/shot order.
+- Timeline auto-assembly selects the newest video asset per shot in episode/scene/shot order. Shot approval status is recorded but does not gate assembly yet, and older takes are not selectable from the editor UI.
 
 ## 6. Context compiler (the differentiator)
 

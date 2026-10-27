@@ -74,7 +74,7 @@ This is a lightweight DSP tracker, not a downbeat-aware ML model. It is fast, cr
 
 ## FFmpeg
 
-Packaged builds include a platform-specific FFmpeg 4.4 sidecar next to the application executable. Development builds prepare it with `pnpm prepare:ffmpeg`.
+Packaged builds include a platform-specific FFmpeg sidecar next to the application executable (4.4 on macOS, 4.1 on Windows x64). Development builds prepare it with `pnpm prepare:ffmpeg`. The exporter avoids 4.4-only filter options so voice, music and source audio mix on the Windows 4.1 build as well.
 
 Discovery order:
 

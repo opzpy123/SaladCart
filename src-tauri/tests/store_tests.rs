@@ -152,6 +152,7 @@ fn generated_script_links_characters_and_compiles_context() {
                 use_continuity: true,
                 ..Default::default()
             },
+            compiled: None,
         },
     )
     .unwrap();
@@ -403,9 +404,15 @@ fn project_style_can_be_copied_from_another_project() {
         .unwrap();
     let mut target = ProjectStore::create(&paths, &input("风格目标")).unwrap();
     let project = target.import_style_from(&source).unwrap();
-    assert_eq!(project.style_bible.visual_style, "manga noir with red accents");
+    assert_eq!(
+        project.style_bible.visual_style,
+        "manga noir with red accents"
+    );
     assert_eq!(project.name, "风格目标");
-    assert_eq!(target.project().unwrap().style_bible.palette, "black, bone, cinnabar");
+    assert_eq!(
+        target.project().unwrap().style_bible.palette,
+        "black, bone, cinnabar"
+    );
 }
 
 #[test]
@@ -439,14 +446,9 @@ async fn system_tts_generates_a_voice_asset() {
         .apply_generated_script(generated_script(), &request)
         .unwrap();
     let shot = store.shots_in_order().unwrap().remove(0);
-    let asset = saladcart_lib::services::voice::generate(
-        &paths,
-        &store.project_id,
-        &shot.id,
-        None,
-    )
-    .await
-    .unwrap();
+    let asset = saladcart_lib::services::voice::generate(&paths, &store.project_id, &shot.id, None)
+        .await
+        .unwrap();
     assert_eq!(asset.kind, "audio");
     assert!(asset.duration_ms.unwrap_or(0) > 0);
     let updated = store.get_shot(&shot.id).unwrap();

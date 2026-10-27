@@ -3,7 +3,8 @@ use crate::error::{AppError, AppResult};
 const SERVICE: &str = "com.saladcart.studio.providers";
 
 fn entry(provider_id: &str) -> AppResult<keyring::Entry> {
-    keyring::Entry::new(SERVICE, provider_id).map_err(|e| AppError::Message(format!("keychain: {e}")))
+    keyring::Entry::new(SERVICE, provider_id)
+        .map_err(|e| AppError::Message(format!("keychain: {e}")))
 }
 
 pub fn set_secret(provider_id: &str, secret: &str) -> AppResult<()> {

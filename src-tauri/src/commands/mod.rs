@@ -274,8 +274,11 @@ pub fn cancel_job(
     project_id: String,
     job_id: String,
 ) -> AppResult<GenerationJob> {
-    state.jobs.cancel(&job_id);
     let store = open(&state, &project_id)?;
+    // Resolve the job inside the requested project before aborting anything,
+    // so a mismatched project id cannot cancel another project's work.
+    store.get_job(&job_id)?;
+    state.jobs.cancel(&job_id);
     let job = store.cancel_job_record(&job_id)?;
     let _ = app.emit("job:update", &job);
     Ok(job)
@@ -454,7 +457,9 @@ pub fn test_provider(
     if provider.id.starts_with("mock-") {
         return Ok(ProviderTestResult {
             ok: true,
-            message: "Offline mock provider is ready. It produces local placeholder media at zero cost.".into(),
+            message:
+                "Offline mock provider is ready. It produces local placeholder media at zero cost."
+                    .into(),
             latency_ms: 1,
         });
     }
@@ -483,10 +488,7 @@ pub fn test_provider(
 }
 
 #[tauri::command]
-pub fn export_provenance(
-    state: State<'_, AppState>,
-    project_id: String,
-) -> AppResult<String> {
+pub fn export_provenance(state: State<'_, AppState>, project_id: String) -> AppResult<String> {
     let store = open(&state, &project_id)?;
     let path = crate::services::provenance::write(&store)?;
     Ok(path.to_string_lossy().to_string())
@@ -509,10 +511,7 @@ pub fn get_system_status(state: State<'_, AppState>) -> AppResult<SystemStatus> 
 }
 
 #[tauri::command]
-pub fn open_storage_folder(
-    app: AppHandle,
-    state: State<'_, AppState>,
-) -> AppResult<()> {
+pub fn open_storage_folder(app: AppHandle, state: State<'_, AppState>) -> AppResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
         .open_path(state.paths.root.to_string_lossy().to_string(), None::<&str>)
@@ -595,10 +594,7 @@ pub async fn analyze_music_beats(
 }
 
 #[tauri::command]
-pub fn auto_beat_sync(
-    state: State<'_, AppState>,
-    project_id: String,
-) -> AppResult<BeatSyncResult> {
+pub fn auto_beat_sync(state: State<'_, AppState>, project_id: String) -> AppResult<BeatSyncResult> {
     let mut store = open(&state, &project_id)?;
     music_service::auto_beat_sync(&mut store)
 }

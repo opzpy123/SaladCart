@@ -67,7 +67,7 @@ interface AppStore {
   refreshProjects: () => Promise<void>;
   refreshSnapshot: (silent?: boolean) => Promise<void>;
   openProject: (id: string) => Promise<void>;
-  createProject: (input: CreateProjectInput, generateAfter: boolean) => Promise<void>;
+  createProject: (input: CreateProjectInput, generateAfter: boolean, episodes?: number) => Promise<void>;
   createDemo: () => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   updateProject: (input: UpdateProjectInput) => Promise<void>;
@@ -201,7 +201,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
   const shotRequest = (
     shotId: string,
     kind: "image" | "video",
-    useContinuity = true,
+    useContinuity?: boolean,
   ): GenerationRequest => {
     const snapshot = get().snapshot;
     const shot = allShots(snapshot).find((s) => s.id === shotId);
@@ -218,7 +218,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
         seed: shot?.seed ?? null,
         variant: null,
         extraPrompt: "",
-        useContinuity,
+        useContinuity: useContinuity ?? Boolean(shot?.continuityFromShotId),
         referenceAssetIds: [],
       },
     };
@@ -354,7 +354,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
       }
     },
 
-    createProject: async (input, generateAfter) => {
+    createProject: async (input, generateAfter, episodes = 1) => {
       set({ loading: true });
       try {
         const snapshot = await invoke<ProjectSnapshot>("create_project", { input });
@@ -377,6 +377,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
             language: input.language,
             styleNotes: "",
             replaceExisting: false,
+            episodes,
           });
         }
       } catch (error) {
@@ -955,6 +956,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
         });
         set((state) => ({
           snapshot: state.snapshot ? { ...state.snapshot, timeline } : null,
+          musicAnalysis: null,
         }));
         pushToast("success", "已应用到时间线");
       } catch (error) {
@@ -1039,6 +1041,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
         } else if (job.kind === "script") {
           pushToast("success", "剧本已写进项目", "分集、场景和分镜已同步");
         } else if (job.kind === "music") {
+          set({ musicAnalysis: null });
           pushToast("success", "AI 配乐已完成", "可在剪辑台试听与卡点");
         } else {
           pushToast("success", job.kind === "video" ? "镜头成片已完成" : "素材已生成", job.requestSummary);

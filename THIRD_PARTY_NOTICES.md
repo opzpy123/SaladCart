@@ -2,7 +2,7 @@
 
 ## FFmpeg
 
-SaladCart bundles an FFmpeg executable from the `@ffmpeg-installer/ffmpeg` npm package (FFmpeg 4.4 static build) so that local video preview, thumbnail, beat analysis and MP4 export work without a separate installation.
+SaladCart bundles an FFmpeg executable from the `@ffmpeg-installer/ffmpeg` npm package (FFmpeg 4.4 static build on macOS, 4.1 on Windows x64) so that local video preview, thumbnail, beat analysis and MP4 export work without a separate installation.
 
 FFmpeg is a separate executable and is licensed under the LGPL/GPL depending on the build configuration. This bundled build is distributed under the terms of the GNU General Public License; FFmpeg source code and build information are available at:
 

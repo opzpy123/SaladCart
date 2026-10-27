@@ -1,7 +1,7 @@
 use crate::error::{AppError, AppResult, OptionExt};
 use crate::models::*;
 use crate::store::mappers::{map_character, now_iso};
-use crate::store::{ProjectStore, ensure_asset_rel};
+use crate::store::{ensure_asset_rel, ProjectStore};
 use rusqlite::{params, OptionalExtension};
 
 impl ProjectStore {

@@ -27,11 +27,7 @@ pub async fn generate(
     request: &MusicRequest,
 ) -> AppResult<MusicResult> {
     if profile.id.starts_with("mock-") {
-        let mock = providers::mock::music(
-            &request.prompt,
-            request.duration_ms,
-            request.seed,
-        )?;
+        let mock = providers::mock::music(&request.prompt, request.duration_ms, request.seed)?;
         return Ok(MusicResult {
             bytes: mock.bytes,
             mime: mock.mime,
@@ -134,7 +130,12 @@ async fn stability(
         if content_type.starts_with("audio/") {
             let bytes = response.bytes().await?.to_vec();
             return Ok(MusicResult {
-                extension: if content_type.contains("wav") { "wav" } else { "mp3" }.into(),
+                extension: if content_type.contains("wav") {
+                    "wav"
+                } else {
+                    "mp3"
+                }
+                .into(),
                 mime: content_type,
                 bytes,
                 cost: 0.08,
@@ -217,7 +218,12 @@ async fn elevenlabs(
         .to_string();
     let bytes = response.bytes().await?.to_vec();
     Ok(MusicResult {
-        extension: if content_type.contains("wav") { "wav" } else { "mp3" }.into(),
+        extension: if content_type.contains("wav") {
+            "wav"
+        } else {
+            "mp3"
+        }
+        .into(),
         mime: content_type,
         bytes,
         cost: 0.10,

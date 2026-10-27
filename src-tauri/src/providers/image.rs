@@ -54,7 +54,8 @@ pub async fn generate(
 }
 
 fn require<'a>(secret: Option<&'a str>, profile: &ProviderProfile) -> AppResult<&'a str> {
-    secret.map(str::trim)
+    secret
+        .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::MissingCredential(format!("{} API key", profile.label)))
 }
@@ -167,10 +168,7 @@ async fn gemini(
     let client = providers::client()?;
     let prompt = full_prompt(request);
     let url = if request.model.starts_with("imagen") {
-        providers::endpoint(
-            profile,
-            &format!("models/{}:predict", request.model),
-        )
+        providers::endpoint(profile, &format!("models/{}:predict", request.model))
     } else {
         providers::endpoint(
             profile,
@@ -481,7 +479,12 @@ async fn fal(
         }
         if status == "COMPLETED" {
             let response_url = response_url
-                .or_else(|| status_json.get("response_url").and_then(|v| v.as_str()).map(str::to_string))
+                .or_else(|| {
+                    status_json
+                        .get("response_url")
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string)
+                })
                 .ok_or_else(|| AppError::Provider("fal returned no response URL".into()))?;
             let result: Value = client
                 .get(response_url)
@@ -622,8 +625,14 @@ async fn comfyui(profile: &ProviderProfile, request: &ImageRequest) -> AppResult
         .get("filename")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Provider("ComfyUI output has no filename".into()))?;
-    let subfolder = image.get("subfolder").and_then(|v| v.as_str()).unwrap_or("");
-    let kind = image.get("type").and_then(|v| v.as_str()).unwrap_or("output");
+    let subfolder = image
+        .get("subfolder")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let kind = image
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("output");
     let url = format!(
         "{}?filename={}&subfolder={}&type={}",
         providers::endpoint(profile, "view"),

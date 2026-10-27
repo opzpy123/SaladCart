@@ -80,10 +80,7 @@ fn prompt_with_negative(request: &VideoRequest) -> String {
     if request.negative_prompt.trim().is_empty() {
         request.prompt.clone()
     } else {
-        format!(
-            "{}\nAvoid: {}",
-            request.prompt, request.negative_prompt
-        )
+        format!("{}\nAvoid: {}", request.prompt, request.negative_prompt)
     }
 }
 
@@ -101,11 +98,19 @@ fn image_b64(path: &PathBuf) -> AppResult<String> {
 
 fn status_normalize(raw: &str) -> String {
     let raw = raw.to_ascii_lowercase();
-    if raw.contains("succeed") || raw.contains("success") || raw.contains("complete") || raw == "done" {
+    if raw.contains("succeed")
+        || raw.contains("success")
+        || raw.contains("complete")
+        || raw == "done"
+    {
         "succeeded".into()
     } else if raw.contains("fail") || raw.contains("error") || raw.contains("cancel") {
         "failed".into()
-    } else if raw.contains("queue") || raw.contains("pending") || raw.contains("submit") || raw.contains("wait") {
+    } else if raw.contains("queue")
+        || raw.contains("pending")
+        || raw.contains("submit")
+        || raw.contains("wait")
+    {
         "pending".into()
     } else {
         "processing".into()
@@ -154,7 +159,14 @@ async fn kling_submit(
     let default_path = format!("/v1/videos/{kind}");
     let path = profile
         .options
-        .get(format!("submitPath{}", if kind == "image2video" { "Image" } else { "Text" }))
+        .get(format!(
+            "submitPath{}",
+            if kind == "image2video" {
+                "Image"
+            } else {
+                "Text"
+            }
+        ))
         .and_then(|v| v.as_str())
         .unwrap_or(&default_path);
     let mut body = json!({
@@ -189,7 +201,13 @@ async fn kling_submit(
     let raw: Value = response.json().await?;
     let id = first_str(
         &raw,
-        &["/data/task_id", "/task_id", "/data/id", "/id", "/data/taskId"],
+        &[
+            "/data/task_id",
+            "/task_id",
+            "/data/id",
+            "/id",
+            "/data/taskId",
+        ],
     )
     .ok_or_else(|| AppError::Provider("Kling returned no task id".into()))?;
     let status = first_status(&raw);
@@ -321,7 +339,12 @@ async fn luma_submit(
     let status = first_status(&raw);
     let output_url = first_str(
         &raw,
-        &["/assets/video", "/assets/video/url", "/output/0/url", "/video/url"],
+        &[
+            "/assets/video",
+            "/assets/video/url",
+            "/output/0/url",
+            "/video/url",
+        ],
     );
     Ok(VideoTask {
         id,
@@ -354,7 +377,12 @@ async fn luma_poll(
     let status = first_status(&raw);
     let output_url = first_str(
         &raw,
-        &["/assets/video", "/assets/video/url", "/output/0/url", "/video/url"],
+        &[
+            "/assets/video",
+            "/assets/video/url",
+            "/output/0/url",
+            "/video/url",
+        ],
     );
     let error = first_str(&raw, &["/failure_reason", "/error", "/message"]);
     Ok(VideoTask {
@@ -415,7 +443,12 @@ async fn runway_submit(
     let status = first_status(&raw);
     Ok(VideoTask {
         id,
-        kind: if has_image { "image_to_video" } else { "text_to_video" }.into(),
+        kind: if has_image {
+            "image_to_video"
+        } else {
+            "text_to_video"
+        }
+        .into(),
         status,
         output_url: runway_output(&raw),
         error: first_str(&raw, &["/failure", "/error"]),
@@ -430,7 +463,10 @@ async fn runway_poll(
 ) -> AppResult<VideoTask> {
     let client = providers::client()?;
     let response = client
-        .get(providers::endpoint(profile, &format!("/v1/tasks/{}", task.id)))
+        .get(providers::endpoint(
+            profile,
+            &format!("/v1/tasks/{}", task.id),
+        ))
         .bearer_auth(secret)
         .header("X-Runway-Version", "2024-11-06")
         .send()
@@ -452,7 +488,10 @@ async fn runway_poll(
 }
 
 fn runway_output(raw: &Value) -> Option<String> {
-    first_str(raw, &["/output/0", "/output/0/url", "/result/0", "/video_url"])
+    first_str(
+        raw,
+        &["/output/0", "/output/0/url", "/result/0", "/video_url"],
+    )
 }
 
 async fn minimax_submit(
@@ -533,7 +572,11 @@ async fn minimax_poll(
     let mut status = first_status(&raw);
     let mut output_url = first_str(
         &raw,
-        &["/file/download_url", "/data/file/download_url", "/video_url"],
+        &[
+            "/file/download_url",
+            "/data/file/download_url",
+            "/video_url",
+        ],
     );
     if status == "succeeded" && output_url.is_none() {
         if let Some(file_id) = first_str(&raw, &["/file_id", "/data/file_id"]) {
@@ -551,7 +594,11 @@ async fn minimax_poll(
                 if let Ok(file_json) = file_response.json::<Value>().await {
                     output_url = first_str(
                         &file_json,
-                        &["/file/download_url", "/data/file/download_url", "/download_url"],
+                        &[
+                            "/file/download_url",
+                            "/data/file/download_url",
+                            "/download_url",
+                        ],
                     );
                     raw["retrieved_file"] = file_json;
                 }
@@ -822,13 +869,8 @@ async fn fal_poll(
     task: &VideoTask,
 ) -> AppResult<VideoTask> {
     let client = providers::client()?;
-    let status_url = first_str(&task.raw, &["/status_url"]).unwrap_or_else(|| {
-        format!(
-            "{}/requests/{}/status",
-            providers::base(profile),
-            task.id
-        )
-    });
+    let status_url = first_str(&task.raw, &["/status_url"])
+        .unwrap_or_else(|| format!("{}/requests/{}/status", providers::base(profile), task.id));
     let response = client
         .get(status_url)
         .header("Authorization", format!("Key {secret}"))

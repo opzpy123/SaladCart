@@ -83,6 +83,14 @@ export function EditorScreen() {
   const [musicPrompt, setMusicPrompt] = useState("雨夜、悬疑、克制的钢琴与低频脉冲");
   const [musicDuration, setMusicDuration] = useState(24);
   const [instrumental, setInstrumental] = useState(true);
+  const [musicProvider, setMusicProvider] = useState("mock-music");
+  const musicProviders = useMemo(
+    () =>
+      (settings?.providers ?? []).filter(
+        (provider) => provider.kind === "music" && provider.id !== "jamendo-music",
+      ),
+    [settings],
+  );
   const [exportName, setExportName] = useState("");
   const [burnSubtitles, setBurnSubtitles] = useState(true);
   const [fps, setFps] = useState(30);
@@ -572,14 +580,23 @@ export function EditorScreen() {
                       <option value={60}>60 秒</option>
                     </select>
                   </Field>
-                  <label className="switch-row switch-row--compact switch-row--vertical">
-                    <input type="checkbox" checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} />
-                    <span>
-                      <strong>纯音乐</strong>
-                      <small>不生成人声</small>
-                    </span>
-                  </label>
+                  <Field label="生成方式">
+                    <select className="input" value={musicProvider} onChange={(e) => setMusicProvider(e.target.value)}>
+                      {musicProviders.map((provider) => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
                 </div>
+                <label className="switch-row switch-row--compact switch-row--vertical">
+                  <input type="checkbox" checked={instrumental} onChange={(e) => setInstrumental(e.target.checked)} />
+                  <span>
+                    <strong>纯音乐</strong>
+                    <small>不生成人声</small>
+                  </span>
+                </label>
                 <Button
                   variant="primary"
                   icon={<Sparkles size={15} />}
@@ -589,7 +606,7 @@ export function EditorScreen() {
                       prompt: musicPrompt,
                       durationMs: musicDuration * 1000,
                       instrumental,
-                      providerId: "mock-music",
+                      providerId: musicProvider,
                       model: null,
                       attachToTimeline: true,
                     })
@@ -597,7 +614,7 @@ export function EditorScreen() {
                 >
                   生成并应用
                 </Button>
-                <p className="muted tiny">离线 Mock 会合成一段 100 BPM 的可卡点配乐，用于跑通流程。</p>
+                <p className="muted tiny">离线 Mock 会合成一段 100 BPM 的可卡点配乐；配置 Key 后可选 Stability / ElevenLabs 生成。</p>
               </div>
 
               {audioAssets.length ? (

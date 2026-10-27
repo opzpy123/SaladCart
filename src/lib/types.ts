@@ -322,6 +322,7 @@ export interface GenerationRequest {
   providerId?: string | null;
   model?: string | null;
   options: GenerationOptions;
+  compiled?: ContextPreview | null;
 }
 
 export interface GenerateScriptRequest {
@@ -449,6 +450,7 @@ export interface TimelinePatch {
   musicAssetId?: string | null;
   clearMusic?: boolean;
   musicVolume?: number;
+  clearBeats?: boolean;
 }
 
 export interface ExportOptions {
