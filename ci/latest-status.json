@@ -1,0 +1,273 @@
+{
+  "runId": 40476629014,
+  "runAttempt": 1,
+  "event": "push",
+  "status": "completed",
+  "conclusion": "failure",
+  "headSha": "2956605ad6bc8dade2b65c7f49b54c5635a5161d",
+  "headBranch": "main",
+  "url": "https://github.com/opzpy123/SaladCart/actions/runs/40476629014",
+  "createdAt": "2026-10-27T08:52:58Z",
+  "updatedAt": "2026-10-27T09:05:23Z",
+  "jobs": [
+    {
+      "name": "build (windows-latest, windows-x64, x86_64-pc-windows-msvc)",
+      "conclusion": "failure",
+      "startedAt": "2026-10-27T08:53:01Z",
+      "completedAt": "2026-10-27T09:05:22Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build installers",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "build (macos-15-intel, --target x86_64-apple-darwin, macos-x64, x86_64-apple-darwin)",
+      "conclusion": "failure",
+      "startedAt": "2026-10-27T08:53:04Z",
+      "completedAt": "2026-10-27T09:02:50Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build installers",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "build (macos-15, macos-arm64, aarch64-apple-darwin)",
+      "conclusion": "failure",
+      "startedAt": "2026-10-27T08:53:01Z",
+      "completedAt": "2026-10-27T08:54:51Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build installers",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-27T09:05:22Z",
+      "completedAt": "2026-10-27T09:05:22Z",
+      "steps": []
+    }
+  ]
+}
