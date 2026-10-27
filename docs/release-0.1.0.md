@@ -8,7 +8,7 @@ Status: **unsigned prerelease** — macOS arm64 artifact built locally. Windows 
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
-| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.8 MB | `9136ed5790695750082d6775a10df6c2f6e2e79432b7ff2112f9833e35e8d34d` |
+| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 21.8 MB | `47e3da42125c5ddadabc745b80a6a949e10e6e1619507109e5dac890e6f6d8fe` |
 
 This DMG is **not signed or notarized**. On first open, macOS may require right-click → **Open**, or System Settings → Privacy & Security → **Open Anyway**. Production distribution needs an Apple Developer ID and notarization.
 
@@ -23,6 +23,7 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 - Image/video provider adapters: Mock, OpenAI Images, Gemini/Imagen, Replicate, ComfyUI, Stability, fal; Kling, Runway, Luma, MiniMax, Veo, Replicate, fal.
 - Persistent generation jobs with progress, cost estimates, retry/cancel and version lineage.
 - Per-shot take history (`shot_takes`, schema v6): inspect older takes in the shot inspector, switch the active take (which resets it to review), and optionally assemble only approved shots.
+- Local asset import into the project library (native multi-file dialog or browser file input), with FFmpeg duration probing and video thumbnails; cross-project character import is now all-or-nothing.
 - One-click native demo project generated through the real store/media pipeline (script, characters, keyframes, four FFmpeg clips, music bed, beat-synced timeline).
 - Bundled per-platform FFmpeg sidecar (4.4 on macOS, 4.1 on Windows); video preview, beat analysis and export work without Homebrew/winget. Audio mixing is compatible with the older Windows build. License notice in `THIRD_PARTY_NOTICES.md`.
 - Timeline auto-assembly, trim/reorder, source audio with per-clip mute, subtitles, music, OS-TTS dialogue voice-over (single and batch across shots) mixed into export, a V1 voice track in the editor, formats, FFmpeg MP4 export with AI-generation metadata.
@@ -35,10 +36,10 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 
 - `pnpm exec tsc --noEmit` — passed.
 - `pnpm test` — 6/6 frontend tests passed.
-- `cargo test` — 19/19 automated Rust tests passed, plus an ignored macOS system-TTS integration test run manually and passed (store isolation, job round-trip, mock script generation, context compiler, cross-project style copy, demo pipeline, provenance manifest, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render with voice+music mix, source-audio mute mix, Windows filename sanitization, take history/selection, approved-only assembly, TTS label cleanup).
+- `cargo test` — 21/21 automated Rust tests passed, plus an ignored macOS system-TTS integration test run manually and passed (store isolation, job round-trip, mock script generation, context compiler, cross-project style copy, asset import/media metadata, atomic character import, demo pipeline, provenance manifest, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render with voice+music mix, source-audio mute mix, Windows filename sanitization, take history/selection, approved-only assembly, TTS label cleanup).
 - `pnpm build` — production frontend bundle passed.
 - Chromium manual walkthrough: Dashboard, Script, Characters, Shots, Editor, Music, Settings.
-- Native macOS walkthrough: seeded demo loaded with 3 characters, 6 shots, 9 images, 4 videos, a 100 BPM music bed and 4 timeline clips; “全部配音” generated 6 system-TTS assets; the editor showed 4 voice clips on the V1 track and the music provider selector.
+- Native macOS walkthrough: seeded demo loaded with 3 characters, 6 shots, 9 images, 4 videos, a 100 BPM music bed and 4 timeline clips; “全部配音” generated 6 system-TTS assets; the editor showed 4 voice clips on the V1 track and the music provider selector. Take history and switching, approved-only assembly, and the native import dialog were also verified.
 - Windows x64 target: `cargo xwin check --target x86_64-pc-windows-msvc` passes, so the Windows `#[cfg]` code and dependency graph compile. Resource compilation used a local shim because `llvm-rc` is not installed on this Mac; a real Windows runtime build/test is still pending.
 - **Native export verified end to end**: rendering the 19-second timeline produced an H.264/AAC MP4 at 1080×1920, 30 fps, with 6 generated voices, the music bed and source-audio mixing. A synchronous-command/Tokio-runtime panic that crashed the app on export was found in this walkthrough and fixed by spawning jobs on Tauri's async runtime.
 - Packaged app detected the bundled FFmpeg 4.4 (`FFmpeg 就绪`) with no environment variables; sidecar lives at `Contents/MacOS/ffmpeg`.

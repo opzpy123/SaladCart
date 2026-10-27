@@ -575,16 +575,37 @@ pub struct ImportFromPath {
 }
 
 #[tauri::command]
-pub fn import_asset_path(
+pub async fn import_asset_path(
     state: State<'_, AppState>,
     project_id: String,
     input: ImportFromPath,
 ) -> AppResult<Asset> {
-    open(&state, &project_id)?.import_asset(ImportAssetInput {
+    let settings = state.settings();
+    let mut store = open(&state, &project_id)?;
+    let mut asset = store.import_asset(ImportAssetInput {
         source_path: input.source_path,
         kind: input.kind,
         name: input.name,
-    })
+    })?;
+    if asset.kind != "image" {
+        if let Ok(ffmpeg) = media::ensure_ffmpeg(&settings) {
+            let probe = ffmpeg.probe(std::path::Path::new(&asset.abs_path));
+            let mut thumb_rel = None;
+            if asset.kind == "video" {
+                let candidate = format!("thumbs/{}.jpg", asset.id);
+                let thumb_abs = store.dir.join(&candidate);
+                if ffmpeg
+                    .extract_frame(std::path::Path::new(&asset.abs_path), 0, &thumb_abs)
+                    .await
+                    .is_ok()
+                {
+                    thumb_rel = Some(candidate);
+                }
+            }
+            asset = store.set_asset_media(&asset.id, probe.duration_ms, thumb_rel.as_deref())?;
+        }
+    }
+    Ok(asset)
 }
 
 #[tauri::command]

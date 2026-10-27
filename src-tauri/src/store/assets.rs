@@ -250,6 +250,24 @@ impl ProjectStore {
         Ok(asset)
     }
 
+    pub fn set_asset_media(
+        &mut self,
+        asset_id: &str,
+        duration_ms: Option<i64>,
+        thumb_rel_path: Option<&str>,
+    ) -> AppResult<Asset> {
+        self.get_asset(asset_id)?;
+        if let Some(rel) = thumb_rel_path {
+            ensure_asset_rel(rel)?;
+        }
+        self.conn.execute(
+            "UPDATE assets SET duration_ms=COALESCE(?1,duration_ms),thumb_rel_path=COALESCE(?2,thumb_rel_path) WHERE id=?3",
+            params![duration_ms, thumb_rel_path, asset_id],
+        )?;
+        self.touch()?;
+        self.get_asset(asset_id)
+    }
+
     pub fn asset_public_url(&self, asset: &Asset) -> String {
         asset.abs_path.clone()
     }

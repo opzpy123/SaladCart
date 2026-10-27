@@ -578,3 +578,99 @@ fn shot_takes_can_be_selected_and_assembly_can_require_approval() {
         Some(shots[0].id.as_str())
     );
 }
+
+#[test]
+fn asset_import_copies_files_and_updates_media_metadata() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("素材导入")).unwrap();
+    let upload = temp.path().join("poster.png");
+    std::fs::write(&upload, b"fake-png").unwrap();
+    let asset = store
+        .import_asset(ImportAssetInput {
+            source_path: upload.to_string_lossy().to_string(),
+            kind: "image".into(),
+            name: "海报".into(),
+        })
+        .unwrap();
+    assert_eq!(asset.kind, "image");
+    assert_eq!(asset.name, "海报");
+    assert!(std::path::Path::new(&asset.abs_path).exists());
+    assert!(asset.abs_path.contains("assets/images/"));
+
+    let thumb_rel = format!("thumbs/{}.jpg", asset.id);
+    let thumb_abs = store.asset_abs(&thumb_rel);
+    std::fs::create_dir_all(thumb_abs.parent().unwrap()).unwrap();
+    std::fs::write(&thumb_abs, b"thumb").unwrap();
+    let updated = store
+        .set_asset_media(&asset.id, Some(12_345), Some(&thumb_rel))
+        .unwrap();
+    assert_eq!(updated.duration_ms, Some(12_345));
+    assert_eq!(
+        updated.thumb_path,
+        Some(thumb_abs.to_string_lossy().to_string())
+    );
+}
+
+#[test]
+fn character_import_is_atomic_when_an_asset_copy_fails() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut source = ProjectStore::create(&paths, &input("角色源")).unwrap();
+    source
+        .apply_generated_script(generated_script(), &GenerateScriptRequest::default())
+        .unwrap();
+    let character = source.list_characters().unwrap().remove(0);
+    let rel = "assets/images/reference.png";
+    let abs = source.asset_abs(rel);
+    std::fs::create_dir_all(abs.parent().unwrap()).unwrap();
+    std::fs::write(&abs, b"portrait").unwrap();
+    let reference = source
+        .insert_asset(NewAsset {
+            kind: "image".into(),
+            name: "reference".into(),
+            rel_path: rel.into(),
+            thumb_rel_path: None,
+            mime: "image/png".into(),
+            width: Some(128),
+            height: Some(128),
+            duration_ms: None,
+            source: "upload".into(),
+            provider_id: None,
+            model: None,
+            prompt: None,
+            negative_prompt: None,
+            seed: None,
+            version: 1,
+            parent_asset_id: None,
+            license: None,
+            license_url: None,
+            attribution: None,
+            source_url: None,
+            status: "ready".into(),
+        })
+        .unwrap();
+    source
+        .attach_character_reference(&character.id, &reference.id, false)
+        .unwrap();
+
+    let mut target = ProjectStore::create(&paths, &input("角色目标")).unwrap();
+    let imported = target
+        .import_character_from(&source, &character.id)
+        .unwrap();
+    let copied_id = imported.reference_asset_id.expect("copied portrait");
+    assert_eq!(target.list_characters().unwrap().len(), 1);
+    assert!(target
+        .get_asset(&copied_id)
+        .unwrap()
+        .abs_path
+        .contains("assets/images/"));
+
+    std::fs::remove_file(&abs).unwrap();
+    let mut failing = ProjectStore::create(&paths, &input("角色失败")).unwrap();
+    assert!(failing
+        .import_character_from(&source, &character.id)
+        .is_err());
+    assert!(failing.list_characters().unwrap().is_empty());
+    assert!(failing.list_assets(None).unwrap().is_empty());
+}

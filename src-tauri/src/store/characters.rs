@@ -164,11 +164,33 @@ impl ProjectStore {
             suffix += 1;
         }
         let id = uuid::Uuid::new_v4().to_string();
+        let mut copied_assets: Vec<String> = Vec::new();
+        let reference_asset_id = if let Some(asset_id) = &source_character.reference_asset_id {
+            let asset = self.copy_asset_from_project(source, asset_id)?;
+            copied_assets.push(asset.id.clone());
+            Some(asset.id)
+        } else {
+            None
+        };
+        let sheet_asset_id = if let Some(asset_id) = &source_character.sheet_asset_id {
+            match self.copy_asset_from_project(source, asset_id) {
+                Ok(asset) => {
+                    copied_assets.push(asset.id.clone());
+                    Some(asset.id)
+                }
+                Err(error) => {
+                    self.discard_imported_assets(&copied_assets);
+                    return Err(error);
+                }
+            }
+        } else {
+            None
+        };
         let now = now_iso();
-        self.conn.execute(
+        let insert = self.conn.execute(
             "INSERT INTO characters
-             (id,name,role,description,appearance,personality,voice,negative_prompt,locked_traits,seed,provider_id,model,status,created_at,updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,'','','draft',?11,?11)",
+             (id,name,role,description,appearance,personality,voice,negative_prompt,locked_traits,reference_asset_id,sheet_asset_id,seed,provider_id,model,status,created_at,updated_at)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,'draft',?15,?15)",
             params![
                 id,
                 name,
@@ -179,29 +201,34 @@ impl ProjectStore {
                 source_character.voice,
                 source_character.negative_prompt,
                 serde_json::to_string(&source_character.locked_traits)?,
+                reference_asset_id,
+                sheet_asset_id,
                 source_character.seed,
+                source_character.provider_id,
+                source_character.model,
                 now
             ],
-        )?;
-
-        let mut reference_asset_id = None;
-        let mut sheet_asset_id = None;
-        if let Some(asset_id) = &source_character.reference_asset_id {
-            if let Ok(asset) = self.copy_asset_from_project(source, asset_id) {
-                reference_asset_id = Some(asset.id);
-            }
+        );
+        if let Err(error) = insert {
+            self.discard_imported_assets(&copied_assets);
+            return Err(error.into());
         }
-        if let Some(asset_id) = &source_character.sheet_asset_id {
-            if let Ok(asset) = self.copy_asset_from_project(source, asset_id) {
-                sheet_asset_id = Some(asset.id);
-            }
-        }
-        self.conn.execute(
-            "UPDATE characters SET reference_asset_id=?1,sheet_asset_id=?2 WHERE id=?3",
-            params![reference_asset_id, sheet_asset_id, id],
-        )?;
         self.touch()?;
         self.get_character(&id)
+    }
+
+    fn discard_imported_assets(&mut self, asset_ids: &[String]) {
+        for asset_id in asset_ids {
+            if let Ok(asset) = self.get_asset(asset_id) {
+                let _ = self
+                    .conn
+                    .execute("DELETE FROM assets WHERE id=?1", params![asset_id]);
+                let _ = std::fs::remove_file(self.asset_abs(&asset.rel_path));
+                if let Some(thumb) = asset.thumb_path {
+                    let _ = std::fs::remove_file(thumb);
+                }
+            }
+        }
     }
 
     pub fn attach_character_reference(

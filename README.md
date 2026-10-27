@@ -16,7 +16,7 @@ SaladCart 使用 **Tauri 2 + Rust + React** 构建，原生支持 macOS 与 Wind
 4. **批量抽卡与选片**：持久化任务队列、并发上限、失败重试；镜头历史 take 可切换，切换后自动回到待审；每次 take 保留版本、seed、模型与父资产。
 5. **配乐与卡点**：搜索正版曲库或 AI 生成配乐；Rust 原生节拍分析；切点自动吸附到节拍。
 6. **粗剪与交付**：自动按剧本装配（可选仅已通过镜头）、字幕、配乐、原片声轨（可逐段静音）、系统配音，9:16 / 16:9 / 1:1 / 4:5，FFmpeg 导出 MP4。
-7. **项目隔离与复用**：每个项目独立存储；从其他项目导入角色与风格会复制素材，不建立实时依赖。
+7. **项目隔离与复用**：每个项目独立存储；本机图片/视频/音频可导入素材库并自动探测时长与封面；从其他项目导入角色与风格会复制素材，不建立实时依赖。
 
 ## 快速开始
 
@@ -68,7 +68,7 @@ Windows: %APPDATA%\com.saladcart.studio
 
 当前 v0.1.0 的自动化验证：
 
-- Rust（19 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
+- Rust（21 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
@@ -80,7 +80,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `9136ed5790695750082d6775a10df6c2f6e2e79432b7ff2112f9833e35e8d34d`，包含批量配音、镜头 take 切换与审片装配），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.1.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.1.0_aarch64.dmg`（SHA-256 `47e3da42125c5ddadabc745b80a6a949e10e6e1619507109e5dac890e6f6d8fe`，包含素材导入、镜头 take 切换与审片装配），校验值、安装提示与已知边界见 [docs/release-0.1.0.md](docs/release-0.1.0.md)。Windows 构建在 GitHub Actions 矩阵中，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 

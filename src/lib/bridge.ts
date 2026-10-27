@@ -6,6 +6,29 @@ export const isTauri =
   typeof window !== "undefined" &&
   ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
 
+export const isDesktop = isTauri;
+
+export async function pickAssetPaths(): Promise<string[] | null> {
+  if (!isTauri) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({
+    multiple: true,
+    title: "导入素材",
+    filters: [
+      {
+        name: "媒体",
+        extensions: [
+          "png", "jpg", "jpeg", "webp",
+          "mp4", "mov", "webm",
+          "mp3", "wav", "m4a", "aac", "flac",
+        ],
+      },
+    ],
+  });
+  if (selected === null) return [];
+  return Array.isArray(selected) ? selected : [selected];
+}
+
 export async function invoke<T>(
   command: string,
   args: Record<string, unknown> = {},

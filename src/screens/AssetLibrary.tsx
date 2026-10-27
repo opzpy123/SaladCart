@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   Check,
@@ -10,8 +10,16 @@ import {
   Layers,
   Music,
   Search,
+  Upload,
 } from "lucide-react";
-import { invoke, assetUrl, formatDuration, relativeTime } from "@/lib/bridge";
+import {
+  assetUrl,
+  formatDuration,
+  formatError,
+  invoke,
+  pickAssetPaths,
+  relativeTime,
+} from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
 import type { Asset } from "@/lib/types";
 import {
@@ -32,10 +40,13 @@ export function AssetLibrary() {
   const attachMusic = useAppStore((s) => s.attachMusic);
   const setRoute = useAppStore((s) => s.setRoute);
   const pushToast = useAppStore((s) => s.pushToast);
+  const refreshSnapshot = useAppStore((s) => s.refreshSnapshot);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Asset | null>(null);
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const assets = useMemo(() => {
     const list = snapshot?.assets ?? [];
@@ -47,6 +58,61 @@ export function AssetLibrary() {
   }, [snapshot?.assets, filter, query]);
 
   if (!snapshot) return null;
+
+  const kindFor = (name: string): "image" | "video" | "audio" => {
+    const ext = name.split(".").pop()?.toLowerCase() ?? "";
+    if (["mp4", "mov", "webm", "m4v"].includes(ext)) return "video";
+    if (["mp3", "wav", "m4a", "aac", "flac"].includes(ext)) return "audio";
+    return "image";
+  };
+
+  const importBatch = async (items: Array<{ sourcePath: string; kind: string; name: string }>) => {
+    if (!items.length) return;
+    setImporting(true);
+    let done = 0;
+    for (const item of items) {
+      try {
+        await invoke<Asset>("import_asset_path", {
+          projectId: snapshot.project.id,
+          input: item,
+        });
+        done += 1;
+      } catch (error) {
+        pushToast("error", "导入失败", `${item.name}：${formatError(error)}`);
+      }
+    }
+    if (done) {
+      await refreshSnapshot(true);
+      pushToast("success", `已导入 ${done} 个素材`, "文件已复制进当前项目");
+    }
+    setImporting(false);
+  };
+
+  const startImport = async () => {
+    const paths = await pickAssetPaths();
+    if (paths === null) {
+      fileInputRef.current?.click();
+      return;
+    }
+    await importBatch(
+      paths.map((sourcePath) => ({
+        sourcePath,
+        kind: kindFor(sourcePath),
+        name: sourcePath.split(/[\\/]/).pop() ?? "导入素材",
+      })),
+    );
+  };
+
+  const onBrowserFiles = async (files: FileList | null) => {
+    if (!files?.length) return;
+    await importBatch(
+      Array.from(files).map((file) => ({
+        sourcePath: file.name,
+        kind: kindFor(file.name),
+        name: file.name,
+      })),
+    );
+  };
 
   const approve = async (asset: Asset) => {
     setBusy(true);
@@ -77,6 +143,17 @@ export function AssetLibrary() {
 
   return (
     <div className="studio-page">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        hidden
+        accept=".png,.jpg,.jpeg,.webp,.mp4,.mov,.webm,.mp3,.wav,.m4a,.aac,.flac"
+        onChange={(event) => {
+          void onBrowserFiles(event.target.files);
+          event.target.value = "";
+        }}
+      />
       <header className="workspace-head">
         <div>
           <p className="eyebrow">ASSETS / 素材库</p>
@@ -86,6 +163,14 @@ export function AssetLibrary() {
           </p>
         </div>
         <div className="workspace-head__actions">
+          <Button
+            variant="secondary"
+            icon={<Upload size={15} />}
+            loading={importing}
+            onClick={() => void startImport()}
+          >
+            导入素材
+          </Button>
           <div className="head-stat"><span>图片</span><strong>{snapshot.assets.filter((a) => a.kind === "image").length}</strong></div>
           <div className="head-stat"><span>视频</span><strong>{snapshot.assets.filter((a) => a.kind === "video").length}</strong></div>
           <div className="head-stat"><span>音频</span><strong>{snapshot.assets.filter((a) => a.kind === "audio").length}</strong></div>
