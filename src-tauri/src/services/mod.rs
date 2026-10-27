@@ -3,6 +3,7 @@ pub mod demo;
 pub mod jobs;
 pub mod media;
 pub mod music;
+pub mod novel;
 pub mod provenance;
 pub mod script;
 pub mod voice;

@@ -729,3 +729,97 @@ fn project_budget_blocks_overcommitment() {
     assert!((store.committed_cost().unwrap() - 0.6).abs() < 1e-9);
     assert!(store.ensure_budget(0.5).is_err());
 }
+
+#[tokio::test]
+async fn novel_adaptation_persists_source_and_builds_episodes() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("长篇改编")).unwrap();
+    let text = concat!(
+        "第一章 雨夜\n沈知遥在旧站台捡到一把铜钥匙。雨水沿着站牌落下，她听见钥匙里有人叫自己的名字。\n",
+        "第二章 旧店\n阿箬把钥匙放进黄铜灯下，告诉她每读一次就会失去一段记忆。沈知遥仍然伸手触碰。\n",
+        "第三章 追查\n顾临川带来十年前的录音，录音里的女孩说出一个不存在的地址。三人决定在天亮前出发。"
+    );
+    let plan = saladcart_lib::services::novel::plan(text);
+    assert_eq!(plan.chapter_count, 3);
+    let saved = store
+        .save_novel(
+            &NovelInput {
+                title: "雨夜钥匙".into(),
+                text: text.into(),
+                source_path: None,
+            },
+            plan.chapter_count,
+            plan.chunk_count,
+        )
+        .unwrap();
+    assert_eq!(saved.chapter_count, 3);
+    assert_eq!(store.snapshot().unwrap().novel.unwrap().title, "雨夜钥匙");
+
+    let source = store.novel_source().unwrap().unwrap();
+    let settings = settings::default_settings();
+    let profile = settings
+        .providers
+        .iter()
+        .find(|provider| provider.id == "mock-llm")
+        .unwrap();
+    let project = store.project().unwrap();
+    let result = saladcart_lib::services::novel::adapt(
+        profile,
+        None,
+        &project,
+        &source,
+        &NovelAdaptRequest {
+            replace_existing: true,
+            ..Default::default()
+        },
+        &|_, _| Ok(()),
+    )
+    .await
+    .unwrap();
+    assert_eq!(result.script.episodes.len(), 3);
+    assert!(!result.script.characters.is_empty());
+    assert!(result
+        .script
+        .episodes
+        .iter()
+        .all(|episode| !episode.scenes.is_empty()));
+
+    let grouped = saladcart_lib::services::novel::adapt(
+        profile,
+        None,
+        &project,
+        &source,
+        &NovelAdaptRequest {
+            max_episodes: 2,
+            replace_existing: true,
+            ..Default::default()
+        },
+        &|_, _| Ok(()),
+    )
+    .await
+    .unwrap();
+    assert_eq!(grouped.script.episodes.len(), 2);
+
+    let stats = store
+        .apply_generated_script(
+            result.script,
+            &GenerateScriptRequest {
+                episodes: 3,
+                replace_existing: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(stats.episodes, 3);
+    let snapshot = store.snapshot().unwrap();
+    assert_eq!(snapshot.episodes.len(), 3);
+    assert!(snapshot
+        .episodes
+        .iter()
+        .all(|episode| !episode.scenes.is_empty()));
+    store
+        .set_novel_analysis(&result.analysis, "adapted")
+        .unwrap();
+    assert_eq!(store.snapshot().unwrap().novel.unwrap().status, "adapted");
+}

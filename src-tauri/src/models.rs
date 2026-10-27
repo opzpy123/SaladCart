@@ -260,6 +260,66 @@ pub struct Timeline {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct NovelSummary {
+    pub id: String,
+    pub title: String,
+    pub source_path: Option<String>,
+    pub char_count: i64,
+    pub chapter_count: i64,
+    pub chunk_count: i64,
+    pub status: String,
+    pub analysis: Value,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NovelSource {
+    #[serde(flatten)]
+    pub summary: NovelSummary,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NovelChapterInfo {
+    pub index: i64,
+    pub title: String,
+    pub char_count: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NovelPlan {
+    pub char_count: i64,
+    pub chapter_count: i64,
+    pub chunk_count: i64,
+    pub estimated_calls: i64,
+    pub chapters: Vec<NovelChapterInfo>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NovelInput {
+    pub title: String,
+    pub text: String,
+    pub source_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct NovelAdaptRequest {
+    pub provider_id: Option<String>,
+    pub model: Option<String>,
+    /// 0 = one episode per chapter, capped by the backend.
+    pub max_episodes: u32,
+    pub style_notes: String,
+    pub replace_existing: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectSnapshot {
     pub project: Project,
     pub characters: Vec<Character>,
@@ -267,6 +327,7 @@ pub struct ProjectSnapshot {
     pub assets: Vec<Asset>,
     pub jobs: Vec<GenerationJob>,
     pub timeline: Timeline,
+    pub novel: Option<NovelSummary>,
     pub storage_path: String,
 }
 

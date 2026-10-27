@@ -5,7 +5,7 @@ use crate::providers::image::{ImageRef, ImageRequest};
 use crate::providers::music::{self as music_provider, MusicRequest as ProviderMusicRequest};
 use crate::providers::video::VideoRequest;
 use crate::providers::{self, image, video};
-use crate::services::{context, media, script};
+use crate::services::{context, media, novel, script};
 use crate::settings;
 use crate::state::AppState;
 use crate::store::assets::NewAsset;
@@ -69,6 +69,79 @@ pub fn enqueue_script(
             cost_estimate: 0.0,
             request_summary: summary,
             request: serde_json::to_value(&request)?,
+        },
+    );
+    store.insert_job(&job)?;
+    drop(store);
+    spawn_job(app.clone(), state, &job);
+    Ok(job)
+}
+
+pub fn enqueue_novel(
+    app: &AppHandle,
+    state: &AppState,
+    project_id: &str,
+    novel: NovelInput,
+    mut options: NovelAdaptRequest,
+) -> AppResult<GenerationJob> {
+    let settings = state.settings();
+    let provider_id = options
+        .provider_id
+        .clone()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| settings.defaults.llm.clone());
+    let profile = settings::find_provider(&settings, &provider_id)?.clone();
+    if profile.kind != "llm" {
+        return Err(AppError::Invalid(format!(
+            "{} is not a script provider",
+            profile.label
+        )));
+    }
+    if !profile.enabled {
+        return Err(AppError::Invalid(format!(
+            "{} is disabled. Enable it in Settings first.",
+            profile.label
+        )));
+    }
+    let model = options
+        .model
+        .clone()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| profile.default_model.clone());
+    options.provider_id = Some(profile.id.clone());
+    options.model = Some(model.clone());
+    let plan = novel::plan(&novel.text);
+    if plan.char_count < 50 {
+        return Err(AppError::Invalid(
+            "novel text is too short; paste at least 50 characters".into(),
+        ));
+    }
+    if plan.chunk_count as usize > novel::MAX_CHUNKS {
+        return Err(AppError::Invalid(format!(
+            "novel needs {} chunks (limit {}); split it into volumes",
+            plan.chunk_count,
+            novel::MAX_CHUNKS
+        )));
+    }
+    let cost = novel::estimate_cost(&profile, &plan);
+    let mut store = ProjectStore::open(&state.paths, project_id)?;
+    store.ensure_budget(cost)?;
+    let saved = store.save_novel(&novel, plan.chapter_count, plan.chunk_count)?;
+    let job = new_job(
+        project_id,
+        JobSpec {
+            kind: "novel".into(),
+            target_type: "project".into(),
+            target_id: Some(project_id.to_string()),
+            provider_id: profile.id.clone(),
+            provider_label: profile.label.clone(),
+            model,
+            cost_estimate: cost,
+            request_summary: format!(
+                "小说改编 · {} · {} 章 · {} 块 · {}",
+                saved.title, plan.chapter_count, plan.chunk_count, profile.label
+            ),
+            request: serde_json::to_value(&options)?,
         },
     );
     store.insert_job(&job)?;
@@ -298,6 +371,7 @@ fn spawn_job(app: AppHandle, state: &AppState, job: &GenerationJob) {
 async fn execute(app: &AppHandle, paths: &AppPaths, job_id: &str, kind: &str) -> AppResult<()> {
     match kind {
         "script" => run_script(app, paths, job_id).await,
+        "novel" => run_novel(app, paths, job_id).await,
         "image" | "video" => run_generation(app, paths, job_id).await,
         "music" => run_music(app, paths, job_id).await,
         "export" => run_export(app, paths, job_id).await,
@@ -404,6 +478,109 @@ async fn run_script(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResul
             })),
             result_asset_id: None,
             cost_actual: 0.0,
+        },
+    )?;
+    emit_job(app, &job);
+    Ok(())
+}
+
+async fn run_novel(app: &AppHandle, paths: &AppPaths, job_id: &str) -> AppResult<()> {
+    let (job, options, profile, project, source) = {
+        let store = ProjectStore::open_by_job(paths, job_id)?;
+        let job = store.start_job(job_id)?;
+        emit_job(app, &job);
+        let options: NovelAdaptRequest = serde_json::from_value(job.request.clone())
+            .map_err(|e| AppError::Invalid(format!("bad novel request: {e}")))?;
+        let settings = settings::load(paths);
+        let mut profile = settings::find_provider(&settings, &job.provider_id)?.clone();
+        profile.default_model = job.model.clone();
+        let project = store.project()?;
+        let source = store
+            .novel_source()?
+            .ok_or_else(|| AppError::NotFound("novel source".into()))?;
+        (job, options, profile, project, source)
+    };
+    let secret = secret_for(&profile)?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        job_id,
+        5,
+        "splitting chapters and planning chunks",
+    )?;
+    let progress_app = app.clone();
+    let progress_paths = paths.clone();
+    let progress_project = job.project_id.clone();
+    let progress_job = job.id.clone();
+    let callback = move |pct: i64, stage: &str| {
+        progress(
+            &progress_app,
+            &progress_paths,
+            &progress_project,
+            &progress_job,
+            pct,
+            stage,
+        )
+    };
+    let adaptation = novel::adapt(
+        &profile,
+        secret.as_deref(),
+        &project,
+        &source,
+        &options,
+        &callback,
+    )
+    .await?;
+    progress(
+        app,
+        paths,
+        &job.project_id,
+        job_id,
+        88,
+        "saving episodes, characters and shots",
+    )?;
+    let mut store = ProjectStore::open_by_job(paths, job_id)?;
+    let script_request = GenerateScriptRequest {
+        premise: source.summary.title.clone(),
+        genre: project.genre.clone(),
+        tone: project.tone.clone(),
+        language: project.language.clone(),
+        episodes: adaptation.script.episodes.len().max(1) as u32,
+        scenes_per_episode: 1,
+        shots_per_scene: 1,
+        style_notes: options.style_notes.clone(),
+        provider_id: Some(profile.id.clone()),
+        model: Some(profile.default_model.clone()),
+        replace_existing: options.replace_existing,
+        seed: None,
+    };
+    let stats = store.apply_generated_script(adaptation.script, &script_request)?;
+    store.set_novel_analysis(&adaptation.analysis, "adapted")?;
+    let cost_actual = if profile.id.starts_with("mock-") {
+        0.0
+    } else {
+        job.cost_estimate
+    };
+    let job = store.finish_job(
+        job_id,
+        FinishJob {
+            status: "succeeded".into(),
+            error: None,
+            result: Some(json!({
+                "chapters": source.summary.chapter_count,
+                "characters": stats.characters_created,
+                "episodes": stats.episodes,
+                "scenes": stats.scenes,
+                "shots": stats.shots,
+                "charCount": source.summary.char_count,
+                "chunkCount": adaptation.chunk_count,
+                "calls": adaptation.calls,
+                "provider": profile.label,
+                "model": profile.default_model,
+            })),
+            result_asset_id: None,
+            cost_actual,
         },
     )?;
     emit_job(app, &job);

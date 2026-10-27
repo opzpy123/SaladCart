@@ -119,7 +119,7 @@ JSON SHAPE
     Ok(script)
 }
 
-fn mock_script(request: &GenerateScriptRequest, project: &Project) -> GeneratedScript {
+pub(crate) fn mock_script(request: &GenerateScriptRequest, project: &Project) -> GeneratedScript {
     let premise = request.premise.trim();
     let premise = if premise.is_empty() {
         "一个能听见旧物记忆的女孩，被迫在一座雨城里追查自己失踪的过去。"

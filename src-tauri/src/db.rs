@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::path::Path;
 
-pub const SCHEMA_VERSION: &str = "7";
+pub const SCHEMA_VERSION: &str = "8";
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     if let Some(parent) = path.parent() {
@@ -212,6 +212,20 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
             asset_id TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
             created_at TEXT NOT NULL,
             PRIMARY KEY (shot_id, asset_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS novel_source (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            text TEXT NOT NULL,
+            source_path TEXT,
+            char_count INTEGER NOT NULL,
+            chapter_count INTEGER NOT NULL,
+            chunk_count INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            analysis_json TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
         );
 
         CREATE INDEX IF NOT EXISTS idx_scenes_episode ON scenes(episode_id, order_index);

@@ -2,6 +2,7 @@ pub mod assets;
 pub mod characters;
 pub mod jobs;
 mod mappers;
+pub mod novel;
 pub mod script;
 pub mod timeline;
 
@@ -296,6 +297,7 @@ impl ProjectStore {
             assets: self.list_assets(None)?,
             jobs: self.list_jobs(80)?,
             timeline: self.timeline()?,
+            novel: self.novel_summary()?,
             storage_path: self.dir.to_string_lossy().to_string(),
         })
     }

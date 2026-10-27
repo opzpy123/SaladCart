@@ -283,6 +283,56 @@ pub fn generate_script(
 }
 
 #[tauri::command]
+pub fn preview_novel(input: NovelInput) -> AppResult<NovelPlan> {
+    if input.text.trim().chars().count() < 50 {
+        return Err(AppError::Invalid(
+            "novel text is too short; paste at least 50 characters".into(),
+        ));
+    }
+    Ok(crate::services::novel::plan(&input.text))
+}
+
+#[tauri::command]
+pub fn get_novel(state: State<'_, AppState>, project_id: String) -> AppResult<Option<NovelSource>> {
+    open(&state, &project_id)?.novel_source()
+}
+
+#[tauri::command]
+pub fn start_novel_adaptation(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    project_id: String,
+    novel: NovelInput,
+    options: NovelAdaptRequest,
+) -> AppResult<GenerationJob> {
+    jobs::enqueue_novel(&app, &state, &project_id, novel, options)
+}
+
+#[tauri::command]
+pub fn read_novel_file(path: String) -> AppResult<String> {
+    let file = std::path::Path::new(&path);
+    let extension = file
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !matches!(extension.as_str(), "txt" | "md" | "text") {
+        return Err(AppError::Invalid(
+            "only .txt, .md or .text novel files are supported".into(),
+        ));
+    }
+    let metadata = std::fs::metadata(file)
+        .map_err(|error| AppError::NotFound(format!("novel file: {error}")))?;
+    if metadata.len() > 5 * 1024 * 1024 {
+        return Err(AppError::Invalid(
+            "novel file is over 5 MB; split it into volumes".into(),
+        ));
+    }
+    let bytes = std::fs::read(file)?;
+    Ok(String::from_utf8_lossy(&bytes).to_string())
+}
+
+#[tauri::command]
 pub fn generate_media(
     app: AppHandle,
     state: State<'_, AppState>,
