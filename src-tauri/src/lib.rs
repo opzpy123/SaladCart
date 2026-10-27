@@ -38,6 +38,8 @@ pub fn run() {
             commands::update_scene,
             commands::update_shot,
             commands::set_shot_status,
+            commands::list_shot_takes,
+            commands::select_shot_take,
             commands::delete_shot,
             commands::delete_scene,
             commands::create_character,

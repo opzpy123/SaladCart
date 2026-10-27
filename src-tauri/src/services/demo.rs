@@ -295,7 +295,7 @@ pub async fn create(paths: &AppPaths, settings: &Settings) -> AppResult<ProjectS
         store.set_shot_status(&shot_id, "needs_review")?;
     }
     let music_asset = store.insert_asset(music_asset)?;
-    store.auto_assemble()?;
+    store.auto_assemble(false)?;
     let bpm = music.bpm;
     let interval = (60_000.0 / bpm) as i64;
     let mut beats = Vec::new();

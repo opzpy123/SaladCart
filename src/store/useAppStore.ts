@@ -24,6 +24,7 @@ import type {
   Scene,
   Settings,
   Shot,
+  ShotTake,
   SystemStatus,
   Timeline,
   TimelinePatch,
@@ -50,6 +51,8 @@ interface AppStore {
   currentSceneId: string | null;
   currentShotId: string | null;
   currentCharacterId: string | null;
+  shotTakes: ShotTake[];
+  takesLoading: boolean;
   selectedShotIds: string[];
   showNewProject: boolean;
   showScriptDialog: boolean;
@@ -99,10 +102,12 @@ interface AppStore {
   importCharacter: (sourceProjectId: string, characterId: string) => Promise<void>;
   importStyle: (sourceProjectId: string) => Promise<void>;
   setShotStatus: (shotId: string, status: string) => Promise<void>;
+  loadShotTakes: (shotId: string) => Promise<void>;
+  selectShotTake: (shotId: string, assetId: string) => Promise<void>;
 
   loadReferences: () => Promise<ProjectReference[]>;
 
-  autoAssemble: () => Promise<void>;
+  autoAssemble: (approvedOnly?: boolean) => Promise<void>;
   updateTimeline: (patch: TimelinePatch) => Promise<void>;
   exportTimeline: (options: ExportOptions) => Promise<void>;
   exportProvenance: () => Promise<void>;
@@ -236,6 +241,8 @@ export const useAppStore = create<AppStore>()((set, get) => {
     currentSceneId: null,
     currentShotId: null,
     currentCharacterId: null,
+    shotTakes: [],
+    takesLoading: false,
     selectedShotIds: [],
     showNewProject: false,
     showScriptDialog: false,
@@ -452,7 +459,11 @@ export const useAppStore = create<AppStore>()((set, get) => {
 
     selectShot: (shotId) => {
       const scene = sceneOfShot(get().snapshot, shotId);
-      set({ currentShotId: shotId, currentSceneId: scene?.id ?? get().currentSceneId });
+      set({
+        currentShotId: shotId,
+        currentSceneId: scene?.id ?? get().currentSceneId,
+        shotTakes: [],
+      });
     },
 
     selectCharacter: (characterId) => set({ currentCharacterId: characterId }),
@@ -786,6 +797,39 @@ export const useAppStore = create<AppStore>()((set, get) => {
       }
     },
 
+    loadShotTakes: async (shotId) => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      set({ takesLoading: true });
+      try {
+        const takes = await invoke<ShotTake[]>("list_shot_takes", {
+          projectId: snapshot.project.id,
+          shotId,
+        });
+        set({ shotTakes: takes, takesLoading: false });
+      } catch (error) {
+        set({ takesLoading: false });
+        pushToast("error", "无法读取历史版本", formatError(error));
+      }
+    },
+
+    selectShotTake: async (shotId, assetId) => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      try {
+        const shot = await invoke<Shot>("select_shot_take", {
+          projectId: snapshot.project.id,
+          shotId,
+          assetId,
+        });
+        set((state) => ({ snapshot: state.snapshot ? updateShotInSnapshot(state.snapshot, shot) : null }));
+        await get().loadShotTakes(shotId);
+        pushToast("success", "已切换镜头版本", "该版本需重新审核");
+      } catch (error) {
+        pushToast("error", "无法切换版本", formatError(error));
+      }
+    },
+
     loadReferences: async () => {
       const snapshot = get().snapshot;
       if (!snapshot) return [];
@@ -799,18 +843,23 @@ export const useAppStore = create<AppStore>()((set, get) => {
       }
     },
 
-    autoAssemble: async () => {
+    autoAssemble: async (approvedOnly = false) => {
       const snapshot = get().snapshot;
       if (!snapshot) return;
       try {
         const timeline = await invoke<Timeline>("auto_assemble_timeline", {
           projectId: snapshot.project.id,
+          approvedOnly,
         });
         set((state) => ({
           snapshot: state.snapshot ? { ...state.snapshot, timeline } : null,
           route: "editor",
         }));
-        pushToast("success", "时间线已自动装配", `${timeline.clips.length} 个镜头`);
+        pushToast(
+          "success",
+          approvedOnly ? "已装配通过镜头" : "时间线已自动装配",
+          `${timeline.clips.length} 个镜头`,
+        );
       } catch (error) {
         pushToast("error", "无法装配时间线", formatError(error));
       }

@@ -594,6 +594,10 @@ impl ProjectStore {
                 "UPDATE shots SET video_asset_id=?1,status='ready',provider_id=?2,model=?3,seed=COALESCE(?4,seed),version=version+1,updated_at=?5 WHERE id=?6",
                 params![asset.id, provider_id, model, seed, now, shot_id],
             )?;
+            self.conn.execute(
+                "INSERT OR IGNORE INTO shot_takes(shot_id,asset_id,created_at) VALUES(?1,?2,?3)",
+                params![shot_id, &asset.id, now_iso()],
+            )?;
         } else {
             self.conn.execute(
                 "UPDATE shots SET image_asset_id=?1,status='ready',provider_id=?2,model=?3,seed=COALESCE(?4,seed),updated_at=?5 WHERE id=?6",

@@ -24,6 +24,7 @@ import type {
   Scene,
   Settings,
   Shot,
+  ShotTake,
   StyleBible,
   SystemStatus,
   Timeline,
@@ -36,9 +37,16 @@ import type {
 
 const listeners = new Map<string, Set<(event: { payload: unknown }) => void>>();
 const cancelled = new Set<string>();
+const shotTakeLinks = new Map<string, Set<string>>();
 const now = () => new Date().toISOString();
 const uid = () => crypto.randomUUID();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function rememberShotTake(shotId: string, assetId: string) {
+  const links = shotTakeLinks.get(shotId) ?? new Set<string>();
+  links.add(assetId);
+  shotTakeLinks.set(shotId, links);
+}
 
 const STYLE: StyleBible = {
   visualStyle:
@@ -921,6 +929,42 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
       touch();
       return structuredClone(findShot(args.shotId as string)) as T;
     }
+    case "list_shot_takes": {
+      const shot = findShot(args.shotId as string);
+      if (!shot) throw new Error("镜头不存在");
+      const linked = shotTakeLinks.get(shot.id) ?? new Set<string>();
+      if (shot.videoAssetId) linked.add(shot.videoAssetId);
+      shotTakeLinks.set(shot.id, linked);
+      const takes: ShotTake[] = [];
+      for (const assetId of linked) {
+        const asset = snapshot.assets.find((item) => item.id === assetId);
+        if (!asset) continue;
+        const job = snapshot.jobs.find((item) => item.kind === "video" && item.resultAssetId === asset.id);
+        takes.push({
+          asset,
+          selected: asset.id === shot.videoAssetId,
+          jobId: job?.id ?? null,
+          costActual: job?.costActual ?? 0,
+        });
+      }
+      takes.sort((a, b) => Number(b.selected) - Number(a.selected));
+      return structuredClone(takes) as T;
+    }
+    case "select_shot_take": {
+      const shot = findShot(args.shotId as string);
+      const asset = snapshot.assets.find((item) => item.id === args.assetId);
+      if (!shot || !asset || asset.kind !== "video") throw new Error("镜头版本不存在");
+      rememberShotTake(shot.id, asset.id);
+      updateShotRecord(shot.id, {
+        videoAssetId: asset.id,
+        status: "needs_review",
+        version: shot.version + 1,
+        providerId: asset.providerId ?? "",
+        model: asset.model ?? "",
+      });
+      touch();
+      return structuredClone(findShot(shot.id)) as T;
+    }
     case "delete_shot": {
       for (const episode of snapshot.episodes) {
         for (const scene of episode.scenes) scene.shots = scene.shots.filter((s) => s.id !== args.shotId);
@@ -1063,6 +1107,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
             status: "ready",
           });
           snapshot.assets.unshift(asset);
+          rememberShotTake(shot.id, asset.id);
           updateShotRecord(shot.id, {
             videoAssetId: asset.id,
             status: "needs_review",
@@ -1173,6 +1218,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
       return structuredClone(next) as T;
     }
     case "auto_assemble_timeline": {
+      const approvedOnly = Boolean(args.approvedOnly);
       const clips = [];
       let cursor = 0;
       const subtitles = [];
@@ -1180,6 +1226,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
         for (const scene of episode.scenes) {
           for (const shot of scene.shots) {
             if (!shot.videoAssetId) continue;
+            if (approvedOnly && shot.status !== "approved") continue;
             const asset = snapshot.assets.find((a) => a.id === shot.videoAssetId);
             const duration = asset?.durationMs ?? shot.durationMs;
             clips.push({

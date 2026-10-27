@@ -149,6 +149,40 @@ pub fn set_shot_status(
 }
 
 #[tauri::command]
+pub fn list_shot_takes(
+    state: State<'_, AppState>,
+    project_id: String,
+    shot_id: String,
+) -> AppResult<Vec<ShotTake>> {
+    open(&state, &project_id)?.shot_takes(&shot_id)
+}
+
+#[tauri::command]
+pub fn select_shot_take(
+    state: State<'_, AppState>,
+    project_id: String,
+    shot_id: String,
+    asset_id: String,
+) -> AppResult<Shot> {
+    let mut store = open(&state, &project_id)?;
+    let asset = store.get_asset(&asset_id)?;
+    if asset.kind != "video" {
+        return Err(AppError::Invalid(
+            "only video assets can be used as a shot take".into(),
+        ));
+    }
+    store.attach_shot_asset(
+        &shot_id,
+        &asset_id,
+        "video",
+        asset.provider_id.as_deref().unwrap_or("imported"),
+        asset.model.as_deref().unwrap_or("unknown"),
+        asset.seed,
+    )?;
+    store.set_shot_status(&shot_id, "needs_review")
+}
+
+#[tauri::command]
 pub fn delete_shot(
     state: State<'_, AppState>,
     project_id: String,
@@ -314,8 +348,9 @@ pub fn update_timeline(
 pub fn auto_assemble_timeline(
     state: State<'_, AppState>,
     project_id: String,
+    approved_only: Option<bool>,
 ) -> AppResult<Timeline> {
-    open(&state, &project_id)?.auto_assemble()
+    open(&state, &project_id)?.auto_assemble(approved_only.unwrap_or(false))
 }
 
 #[tauri::command]

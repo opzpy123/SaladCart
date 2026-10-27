@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ArrowRight,
+  Check,
   Clapperboard,
   Clock3,
   FileText,
@@ -374,6 +375,10 @@ function ShotInspector({
 }) {
   const snapshot = useAppStore((s) => s.snapshot);
   const openContext = useAppStore((s) => s.openShotContext);
+  const shotTakes = useAppStore((s) => s.shotTakes);
+  const takesLoading = useAppStore((s) => s.takesLoading);
+  const loadShotTakes = useAppStore((s) => s.loadShotTakes);
+  const selectShotTake = useAppStore((s) => s.selectShotTake);
   const activeJob = snapshot?.jobs.find(
     (job) => job.targetId === shot.id && (job.status === "running" || job.status === "queued"),
   );
@@ -384,6 +389,10 @@ function ShotInspector({
   const currentIndex = orderedShots.findIndex((item) => item.id === shot.id);
   const immediatePrevious = currentIndex > 0 ? orderedShots[currentIndex - 1] : null;
   const previous = orderedShots.find((s) => s.id === shot.continuityFromShotId);
+
+  useEffect(() => {
+    void loadShotTakes(shot.id);
+  }, [shot.id, shot.videoAssetId, loadShotTakes]);
 
   return (
     <div className="inspector__inner">
@@ -409,6 +418,47 @@ function ShotInspector({
           </div>
         )}
       </div>
+
+      {shotTakes.length > 0 ? (
+        <div className="inspector-section take-section">
+          <div className="take-section__head">
+            <label className="inspector-label">历史版本</label>
+            <span className="muted tiny">{takesLoading ? "读取中…" : `${shotTakes.length} 个 take`}</span>
+          </div>
+          <div className="take-grid">
+            {shotTakes.map((take) => (
+              <button
+                key={take.asset.id}
+                type="button"
+                className={cx("take-card", take.selected && "is-selected")}
+                onClick={() => {
+                  if (!take.selected) void selectShotTake(shot.id, take.asset.id);
+                }}
+              >
+                <span className="take-card__thumb">
+                  {take.asset.thumbPath ? (
+                    <img src={assetUrl(take.asset.thumbPath)} alt="" />
+                  ) : (
+                    <Film size={18} />
+                  )}
+                  {take.selected ? (
+                    <span className="take-card__badge">
+                      <Check size={11} />
+                    </span>
+                  ) : null}
+                </span>
+                <span className="take-card__meta">
+                  <strong>v{take.asset.version} · {formatDuration(take.asset.durationMs ?? 0)}</strong>
+                  <small>
+                    {take.asset.model ?? take.asset.providerId ?? "本地素材"}
+                    {take.costActual > 0 ? ` · ¥${take.costActual.toFixed(2)}` : ""}
+                  </small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {activeJob ? (
         <div className="inspector-job">

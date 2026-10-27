@@ -160,6 +160,13 @@ export interface Asset {
   createdAt: string;
 }
 
+export interface ShotTake {
+  asset: Asset;
+  selected: boolean;
+  jobId: string | null;
+  costActual: number;
+}
+
 export interface GenerationJob {
   id: string;
   projectId: string;

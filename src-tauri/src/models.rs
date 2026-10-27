@@ -179,6 +179,15 @@ pub struct Asset {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ShotTake {
+    pub asset: Asset,
+    pub selected: bool,
+    pub job_id: Option<String>,
+    pub cost_actual: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GenerationJob {
     pub id: String,
     pub project_id: String,

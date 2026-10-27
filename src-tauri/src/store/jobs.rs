@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult, OptionExt};
 use crate::models::*;
-use crate::store::mappers::{map_job, now_iso};
+use crate::store::mappers::{map_asset, map_job, now_iso};
 use crate::store::ProjectStore;
 use rusqlite::{params, OptionalExtension};
 use serde_json::Value;
@@ -132,5 +132,54 @@ impl ProjectStore {
             out.push(row?);
         }
         Ok(out)
+    }
+
+    pub fn shot_takes(&self, shot_id: &str) -> AppResult<Vec<ShotTake>> {
+        let shot = self.get_shot(shot_id)?;
+        let mut stmt = self.conn.prepare(
+            "SELECT a.*,
+                    (SELECT j.id FROM jobs j WHERE j.result_asset_id=a.id
+                     ORDER BY j.created_at DESC LIMIT 1) AS job_id,
+                    COALESCE((SELECT j.cost_actual FROM jobs j WHERE j.result_asset_id=a.id
+                              ORDER BY j.created_at DESC LIMIT 1), 0) AS cost_actual
+             FROM shot_takes t JOIN assets a ON a.id=t.asset_id
+             WHERE t.shot_id=?1 AND a.kind='video'
+             ORDER BY t.created_at DESC LIMIT 50",
+        )?;
+        let rows = stmt.query_map(params![shot_id], |row| {
+            Ok(ShotTake {
+                asset: map_asset(row, &self.dir)?,
+                selected: false,
+                job_id: row.get("job_id")?,
+                cost_actual: row.get::<_, Option<f64>>("cost_actual")?.unwrap_or(0.0),
+            })
+        })?;
+        let mut takes: Vec<ShotTake> = Vec::new();
+        for row in rows {
+            let take = row?;
+            if !takes.iter().any(|item| item.asset.id == take.asset.id) {
+                takes.push(take);
+            }
+        }
+        let selected_id = shot.video_asset_id.clone();
+        if let Some(id) = &selected_id {
+            if !takes.iter().any(|take| &take.asset.id == id) {
+                if let Ok(asset) = self.get_asset(id) {
+                    takes.insert(
+                        0,
+                        ShotTake {
+                            asset,
+                            selected: true,
+                            job_id: None,
+                            cost_actual: 0.0,
+                        },
+                    );
+                }
+            }
+        }
+        for take in &mut takes {
+            take.selected = selected_id.as_deref() == Some(take.asset.id.as_str());
+        }
+        Ok(takes)
     }
 }

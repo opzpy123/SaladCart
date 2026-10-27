@@ -84,6 +84,7 @@ export function EditorScreen() {
   const [musicDuration, setMusicDuration] = useState(24);
   const [instrumental, setInstrumental] = useState(true);
   const [musicProvider, setMusicProvider] = useState("mock-music");
+  const [approvedOnly, setApprovedOnly] = useState(false);
   const musicProviders = useMemo(
     () =>
       (settings?.providers ?? []).filter(
@@ -241,7 +242,15 @@ export function EditorScreen() {
               </option>
             ))}
           </select>
-          <Button variant="secondary" icon={<Scissors size={15} />} onClick={() => void autoAssemble()}>
+          <label className="toolbar-check" title="只装配已通过审核的镜头">
+            <input
+              type="checkbox"
+              checked={approvedOnly}
+              onChange={(e) => setApprovedOnly(e.target.checked)}
+            />
+            <span>仅已通过</span>
+          </label>
+          <Button variant="secondary" icon={<Scissors size={15} />} onClick={() => void autoAssemble(approvedOnly)}>
             重新装配
           </Button>
           <Button

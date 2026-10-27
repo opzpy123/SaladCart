@@ -233,20 +233,26 @@ impl ProjectStore {
         self.timeline()
     }
 
-    pub fn auto_assemble(&mut self) -> AppResult<Timeline> {
+    pub fn auto_assemble(&mut self, approved_only: bool) -> AppResult<Timeline> {
         let project = self.project()?;
         let timeline = self.timeline()?;
         let (width, height) = dimensions_for(&project.aspect_ratio);
 
-        let mut stmt = self.conn.prepare(
+        let review_filter = if approved_only {
+            " AND s.status='approved'"
+        } else {
+            ""
+        };
+        let sql = format!(
             "SELECT s.id, s.title, s.dialogue, s.duration_ms, s.video_asset_id, sc.title as scene_title, a.duration_ms as asset_duration
              FROM shots s
              JOIN scenes sc ON sc.id=s.scene_id
              JOIN episodes e ON e.id=sc.episode_id
              JOIN assets a ON a.id=s.video_asset_id
-             WHERE s.video_asset_id IS NOT NULL AND s.video_asset_id != ''
-             ORDER BY e.order_index ASC, sc.order_index ASC, s.order_index ASC",
-        )?;
+             WHERE s.video_asset_id IS NOT NULL AND s.video_asset_id != ''{review_filter}
+             ORDER BY e.order_index ASC, sc.order_index ASC, s.order_index ASC"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
         struct RowData {
             shot_id: String,
             label: String,

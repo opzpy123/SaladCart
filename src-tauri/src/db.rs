@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 use std::path::Path;
 
-pub const SCHEMA_VERSION: &str = "5";
+pub const SCHEMA_VERSION: &str = "6";
 
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     if let Some(parent) = path.parent() {
@@ -206,11 +206,19 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
             text TEXT NOT NULL
         );
 
+        CREATE TABLE IF NOT EXISTS shot_takes (
+            shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
+            asset_id TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (shot_id, asset_id)
+        );
+
         CREATE INDEX IF NOT EXISTS idx_scenes_episode ON scenes(episode_id, order_index);
         CREATE INDEX IF NOT EXISTS idx_shots_scene ON shots(scene_id, order_index);
         CREATE INDEX IF NOT EXISTS idx_assets_kind ON assets(kind, created_at);
         CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs(created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_clips_timeline ON timeline_clips(timeline_id, order_index);
+        CREATE INDEX IF NOT EXISTS idx_shot_takes_shot ON shot_takes(shot_id, created_at DESC);
         "#,
     )?;
     ensure_column(conn, "timeline", "music_asset_id", "music_asset_id TEXT")?;
@@ -246,6 +254,12 @@ pub fn migrate(conn: &Connection) -> rusqlite::Result<()> {
     ensure_column(conn, "shots", "voice_asset_id", "voice_asset_id TEXT")?;
     conn.execute(
         "UPDATE jobs SET project_id=(SELECT id FROM project LIMIT 1) WHERE project_id=''",
+        [],
+    )?;
+    conn.execute(
+        "INSERT OR IGNORE INTO shot_takes(shot_id, asset_id, created_at)
+         SELECT id, video_asset_id, updated_at FROM shots
+         WHERE video_asset_id IS NOT NULL AND video_asset_id != ''",
         [],
     )?;
     conn.execute(

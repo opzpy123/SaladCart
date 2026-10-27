@@ -211,7 +211,7 @@ fn timeline_auto_assembly_and_beat_snap() {
             .attach_shot_asset(&shot.id, &asset.id, "video", "mock-video", "mock", None)
             .unwrap();
     }
-    let timeline = store.auto_assemble().unwrap();
+    let timeline = store.auto_assemble(false).unwrap();
     assert_eq!(timeline.clips.len(), 2);
     assert_eq!(timeline.subtitles.len(), 1);
 
@@ -453,4 +453,128 @@ async fn system_tts_generates_a_voice_asset() {
     assert!(asset.duration_ms.unwrap_or(0) > 0);
     let updated = store.get_shot(&shot.id).unwrap();
     assert_eq!(updated.voice_asset_id, Some(asset.id));
+}
+
+#[test]
+fn shot_takes_can_be_selected_and_assembly_can_require_approval() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let mut store = ProjectStore::create(&paths, &input("版本测试")).unwrap();
+    store
+        .apply_generated_script(generated_script(), &GenerateScriptRequest::default())
+        .unwrap();
+    let shots = store.shots_in_order().unwrap();
+    assert!(shots.len() >= 2);
+
+    let add_video = |store: &mut ProjectStore, name: &str, version: i64| {
+        let rel = format!("assets/videos/{name}.mp4");
+        let abs = store.asset_abs(&rel);
+        std::fs::create_dir_all(abs.parent().unwrap()).unwrap();
+        std::fs::write(&abs, b"placeholder").unwrap();
+        store
+            .insert_asset(NewAsset {
+                kind: "video".into(),
+                name: name.into(),
+                rel_path: rel,
+                thumb_rel_path: None,
+                mime: "video/mp4".into(),
+                width: Some(720),
+                height: Some(1280),
+                duration_ms: Some(5_000),
+                source: "test".into(),
+                provider_id: Some("mock-video".into()),
+                model: Some("mock".into()),
+                prompt: None,
+                negative_prompt: None,
+                seed: None,
+                version,
+                parent_asset_id: None,
+                license: None,
+                license_url: None,
+                attribution: None,
+                source_url: None,
+                status: "ready".into(),
+            })
+            .unwrap()
+    };
+
+    let first = add_video(&mut store, "take-a", 1);
+    store
+        .attach_shot_asset(&shots[0].id, &first.id, "video", "mock-video", "mock", None)
+        .unwrap();
+    let second = add_video(&mut store, "take-b", 2);
+    store
+        .attach_shot_asset(
+            &shots[0].id,
+            &second.id,
+            "video",
+            "mock-video",
+            "mock",
+            None,
+        )
+        .unwrap();
+    let job = GenerationJob {
+        id: uuid::Uuid::new_v4().to_string(),
+        project_id: store.project_id.clone(),
+        kind: "video".into(),
+        target_type: "shot".into(),
+        target_id: Some(shots[0].id.clone()),
+        provider_id: "mock-video".into(),
+        provider_label: "Mock".into(),
+        model: "mock".into(),
+        status: "succeeded".into(),
+        progress: 100,
+        stage: "done".into(),
+        error: None,
+        cost_estimate: 0.0,
+        cost_actual: 0.25,
+        request_summary: "take".into(),
+        request: serde_json::json!({}),
+        result: Some(serde_json::json!({"assetId": second.id})),
+        result_asset_id: Some(second.id.clone()),
+        created_at: saladcart_lib::store::now_iso(),
+        started_at: None,
+        finished_at: Some(saladcart_lib::store::now_iso()),
+    };
+    store.insert_job(&job).unwrap();
+
+    let takes = store.shot_takes(&shots[0].id).unwrap();
+    assert_eq!(takes.len(), 2);
+    assert!(takes
+        .iter()
+        .any(|take| take.asset.id == first.id && !take.selected));
+    assert!(takes
+        .iter()
+        .any(|take| take.asset.id == second.id && take.selected && take.cost_actual == 0.25));
+
+    store
+        .attach_shot_asset(&shots[0].id, &first.id, "video", "mock-video", "mock", None)
+        .unwrap();
+    store.set_shot_status(&shots[0].id, "needs_review").unwrap();
+    let takes = store.shot_takes(&shots[0].id).unwrap();
+    assert!(takes
+        .iter()
+        .any(|take| take.asset.id == first.id && take.selected));
+    assert!(takes
+        .iter()
+        .any(|take| take.asset.id == second.id && !take.selected));
+
+    let third = add_video(&mut store, "take-c", 1);
+    store
+        .attach_shot_asset(&shots[1].id, &third.id, "video", "mock-video", "mock", None)
+        .unwrap();
+    store.set_shot_status(&shots[1].id, "needs_review").unwrap();
+
+    let rough = store.auto_assemble(false).unwrap();
+    assert_eq!(rough.clips.len(), 2);
+    let approved = store.auto_assemble(true).unwrap();
+    assert_eq!(approved.clips.len(), 0);
+
+    store.set_shot_status(&shots[0].id, "approved").unwrap();
+    let approved = store.auto_assemble(true).unwrap();
+    assert_eq!(approved.clips.len(), 1);
+    assert_eq!(
+        approved.clips[0].shot_id.as_deref(),
+        Some(shots[0].id.as_str())
+    );
 }
