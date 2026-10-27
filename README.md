@@ -4,6 +4,8 @@
 
 SaladCart 使用 **Tauri 2 + Rust + React** 构建，原生支持 macOS 与 Windows。每个项目拥有独立的 SQLite 数据库、素材目录与成片目录。项目内的剧本、角色、风格圣经、分镜、配乐与生成任务互相引用；生成视频时自动组装上下文，先预览再付费。
 
+![SaladCart native workstation](docs/assets/native-dashboard.png)
+
 ## 为什么是它
 
 浏览器生成器只解决“生成一次”，SaladCart 解决一部漫剧的循环：
@@ -27,6 +29,7 @@ pnpm dev:tauri      # 原生桌面开发模式
 pnpm test           # 前端测试
 pnpm test:rust      # Rust 测试
 pnpm build:tauri    # 打包当前平台
+pnpm seed:demo      # 向本机工作区注入一部完整演示项目（剧本/角色/视频/配乐）
 ```
 
 FFmpeg：macOS `brew install ffmpeg`；Windows `winget install Gyan.FFmpeg`。也可以把可执行文件路径填入设置，或设置 `SALADCART_FFMPEG`。未安装 FFmpeg 时剧本与图片生成仍可用，视频与导出会给出可操作的错误。
@@ -42,7 +45,7 @@ FFmpeg：macOS `brew install ffmpeg`；Windows `winget install Gyan.FFmpeg`。�
 
 密钥只存在 macOS Keychain / Windows Credential Manager，不进入项目、日志或渲染层。详细配置与已知接口差异见 [docs/provider-setup.md](docs/provider-setup.md)。
 
-**没有 Key 也能完整跑通**：Mock 编剧会生成中文分镜，Mock 画师生成品牌化占位画面，Mock 视频通过 FFmpeg 生成本地片段，Mock 配乐合成可卡点的 100 BPM 音轨。浏览器演示模式还会加载一部完整的示例项目「雾港来信」。
+**没有 Key 也能完整跑通**：Mock 编剧会生成中文分镜，Mock 画师生成品牌化占位画面，Mock 视频通过 FFmpeg 生成本地片段，Mock 配乐合成可卡点的 100 BPM 音轨。浏览器演示模式会自动加载「雾港来信」；原生端可在概览点「载入演示项目」，或用 `pnpm seed:demo` 注入完整示例。
 
 ## 项目数据
 
@@ -65,8 +68,8 @@ Windows: %APPDATA%\com.saladcart.studio
 
 当前 v0.1.0 的自动化验证：
 
-- Rust：项目隔离、剧本落库、角色绑定、上下文编译器、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg MP4 渲染。
-- 前端：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
+- Rust（11 项）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、上下文编译器、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg MP4 渲染。
+- 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 启动验证。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
 

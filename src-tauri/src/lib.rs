@@ -70,6 +70,7 @@ pub fn run() {
             commands::analyze_music_beats,
             commands::auto_beat_sync,
             commands::attach_music,
+            commands::create_demo_project,
         ])
         .run(tauri::generate_context!())
         .expect("error while running SaladCart");

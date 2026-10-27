@@ -37,6 +37,7 @@ export function ProjectDashboard() {
   const setNewProject = useAppStore((s) => s.setShowNewProject);
   const setRoute = useAppStore((s) => s.setRoute);
   const archive = useAppStore((s) => s.archiveProject);
+  const createDemo = useAppStore((s) => s.createDemo);
 
   const latest = projects[0];
   const activeSummary = snapshot
@@ -63,9 +64,17 @@ export function ProjectDashboard() {
             <Button variant="primary" size="lg" icon={<Plus size={17} />} onClick={() => setNewProject(true)}>
               开一部新漫剧
             </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              icon={<Sparkles size={17} />}
+              onClick={() => void createDemo()}
+            >
+              载入演示项目
+            </Button>
             {latest ? (
               <Button
-                variant="secondary"
+                variant="ghost"
                 size="lg"
                 icon={<Clapperboard size={17} />}
                 onClick={() => void openProject(latest.id)}
@@ -161,9 +170,14 @@ export function ProjectDashboard() {
               title="还没有项目"
               description="建立第一个漫剧项目，或者从一句话立意开始生成完整分镜。"
               action={
-                <Button variant="primary" icon={<Plus size={15} />} onClick={() => setNewProject(true)}>
-                  新建项目
-                </Button>
+                <div className="empty-actions">
+                  <Button variant="primary" icon={<Plus size={15} />} onClick={() => setNewProject(true)}>
+                    新建项目
+                  </Button>
+                  <Button variant="secondary" icon={<Sparkles size={15} />} onClick={() => void createDemo()}>
+                    载入演示
+                  </Button>
+                </div>
               }
             />
           )}

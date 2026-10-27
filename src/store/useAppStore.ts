@@ -68,6 +68,7 @@ interface AppStore {
   refreshSnapshot: (silent?: boolean) => Promise<void>;
   openProject: (id: string) => Promise<void>;
   createProject: (input: CreateProjectInput, generateAfter: boolean) => Promise<void>;
+  createDemo: () => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   updateProject: (input: UpdateProjectInput) => Promise<void>;
   setRoute: (route: Route) => void;
@@ -377,6 +378,29 @@ export const useAppStore = create<AppStore>()((set, get) => {
       } catch (error) {
         set({ loading: false });
         pushToast("error", "创建项目失败", formatError(error));
+      }
+    },
+
+    createDemo: async () => {
+      set({ loading: true });
+      try {
+        const snapshot = await invoke<ProjectSnapshot>("create_demo_project");
+        const scene = firstScene(snapshot);
+        set({
+          snapshot,
+          route: "script",
+          showNewProject: false,
+          currentSceneId: scene?.id ?? null,
+          currentShotId: scene?.shots[0]?.id ?? null,
+          currentCharacterId: snapshot.characters[0]?.id ?? null,
+          selectedShotIds: [],
+          loading: false,
+        });
+        await get().refreshProjects();
+        pushToast("success", "演示项目已就绪", "剧本、角色、分镜、配乐都已装车");
+      } catch (error) {
+        set({ loading: false });
+        pushToast("error", "无法载入演示项目", formatError(error));
       }
     },
 

@@ -266,6 +266,32 @@ async fn mock_llm_generates_an_applicable_bible() {
     assert!(snapshot.characters.len() >= 2);
 }
 
+#[tokio::test]
+async fn demo_project_seeds_the_full_graph() {
+    let temp = tempfile::tempdir().unwrap();
+    let paths = AppPaths::new(temp.path().join("app")).unwrap();
+    let settings = settings::default_settings();
+    let snapshot = saladcart_lib::services::demo::create(&paths, &settings)
+        .await
+        .unwrap();
+    assert_eq!(snapshot.project.name, "雾港来信 · 演示");
+    assert!(snapshot.characters.len() >= 3);
+    let shots: Vec<&Shot> = snapshot
+        .episodes
+        .iter()
+        .flat_map(|episode| episode.scenes.iter())
+        .flat_map(|scene| scene.shots.iter())
+        .collect();
+    assert!(shots.len() >= 4);
+    assert!(snapshot.assets.iter().any(|a| a.kind == "audio"));
+    assert!(snapshot.assets.iter().filter(|a| a.kind == "image").count() >= 6);
+    assert!(snapshot.timeline.music_asset_id.is_some());
+    if Ffmpeg::discover(&settings).is_some() {
+        assert!(snapshot.assets.iter().any(|a| a.kind == "video"));
+        assert!(!snapshot.timeline.clips.is_empty());
+    }
+}
+
 #[test]
 fn jobs_round_trip_with_project_id() {
     let temp = tempfile::tempdir().unwrap();

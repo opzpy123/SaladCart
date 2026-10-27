@@ -578,6 +578,13 @@ pub fn attach_music(
 }
 
 #[tauri::command]
+pub async fn create_demo_project(state: State<'_, AppState>) -> AppResult<ProjectSnapshot> {
+    let paths = state.paths.clone();
+    let settings = state.settings();
+    crate::services::demo::create(&paths, &settings).await
+}
+
+#[tauri::command]
 pub fn health_check() -> Value {
     json!({"ok": true, "app": "SaladCart"})
 }

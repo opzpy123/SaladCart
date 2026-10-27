@@ -27,7 +27,8 @@ export function assetUrl(path: string | null | undefined): string {
   if (path.startsWith("data:") || path.startsWith("blob:") || path.startsWith("http")) {
     return path;
   }
-  if (path.startsWith("/")) return path;
+  // macOS/Linux project assets are absolute paths beginning with `/`.
+  // They must go through the Tauri asset protocol, not be treated as web roots.
   return isTauri ? convertFileSrc(path) : path;
 }
 

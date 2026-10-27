@@ -889,6 +889,8 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
       projects.unshift(summaryOf(snapshot));
       return structuredClone(snapshot) as T;
     }
+    case "create_demo_project":
+      return structuredClone(snapshot) as T;
     case "update_project": {
       const input = args.input as UpdateProjectInput;
       snapshot.project = { ...snapshot.project, ...input, updatedAt: now() };

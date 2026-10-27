@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "check:rust": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "seed:demo": "cargo run --manifest-path src-tauri/Cargo.toml --example seed_demo",
     "tauri": "tauri"
   },
   "dependencies": {

@@ -8,11 +8,11 @@ Status: **unsigned prerelease** — macOS arm64 artifact built locally. Windows 
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
-| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 6.6 MB | `866de0c335610ef5f6ded14ad8ebaf4413e9dcb1f82b7e3fb9fc13c6c7fb8443` |
+| macOS 11+ arm64 | `release/SaladCart_0.1.0_aarch64.dmg` | 6.6 MB | `b3071ad1725a191b82e4d11141048d11fc25b92458e910e6da53831204515f7a` |
 
 This DMG is **not signed or notarized**. On first open, macOS may require right-click → **Open**, or System Settings → Privacy & Security → **Open Anyway**. Production distribution needs an Apple Developer ID and notarization.
 
-The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + tests). It has not been run because no tag was pushed and no Windows runner was available in this session. Push a `v0.1.0` tag after reviewing the workflow to run macOS arm64/x64 and Windows builds.
+The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + tests). The workflow now also runs on pushes to `main`; this release was pushed there to trigger macOS arm64/x64 + Windows verification. A Windows runtime has not been available locally, so Windows remains CI-verified only (check the repository Actions tab; no `gh`/token is configured in this workspace). Push a `v0.1.0` tag after CI is green for a formal artifact release.
 
 ## What is included
 
@@ -22,6 +22,7 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 - Character trait locks, reference portraits, turnaround sheets and continuity frames.
 - Image/video provider adapters: Mock, OpenAI Images, Gemini/Imagen, Replicate, ComfyUI, Stability, fal; Kling, Runway, Luma, MiniMax, Veo, Replicate, fal.
 - Persistent generation jobs with progress, cost estimates, retry/cancel and version lineage.
+- One-click native demo project generated through the real store/media pipeline (script, characters, keyframes, four FFmpeg clips, music bed, beat-synced timeline).
 - Timeline auto-assembly, trim/reorder, subtitles, music, formats, FFmpeg MP4 export.
 - Jamendo licensed music search; Stability Audio / ElevenLabs music generation; native beat detection and auto-cut.
 - OS keychain secrets. No telemetry. Browser demo bridge with a complete sample project for UI testing.
@@ -30,10 +31,11 @@ The Windows build is defined in `.github/workflows/release.yml` (NSIS/MSI + test
 
 - `pnpm exec tsc --noEmit` — passed.
 - `pnpm test` — 6/6 frontend tests passed.
-- `cargo test` — 10/10 Rust tests passed (store isolation, job round-trip, mock script generation, context compiler, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render).
+- `cargo test` — 11/11 Rust tests passed (store isolation, job round-trip, mock script generation, context compiler, full demo pipeline, timeline assembly, beat snap, beat detection, WAV mock, real FFmpeg MP4 render).
 - `pnpm build` — production frontend bundle passed.
 - Chromium manual walkthrough: Dashboard, Script, Characters, Shots, Editor, Music, Settings.
-- macOS `.app` debug and release bundles launched; a real project was created and its database migration was verified. Full native UI generation automation was blocked by macOS Computer Use being locked; the same path is covered by service-level tests and the browser bridge.
+- macOS `.app` debug and release bundles launched; a seeded native demo loaded with 3 characters, 6 shots, 9 images, 4 videos, a 100 BPM music bed and 4 timeline clips. Native image display was fixed to use the Tauri asset protocol for macOS absolute paths.
+- The release screenshot is [native-dashboard.png](assets/native-dashboard.png). Full native UI click automation was partially blocked by macOS Computer Use being locked; the same data pipeline is covered by the demo service test and browser bridge.
 
 ## Requirements and caveats
 
