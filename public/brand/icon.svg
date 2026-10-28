@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f3f4f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#tile)"/>
+  <rect x="1.5" y="1.5" width="1021" height="1021" rx="226.5" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="3"/>
+  <g fill="none" stroke="#141416" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"
+     transform="translate(512 512) scale(1.12) translate(-566.8 -585)">
+    <path d="M 340 330 H 372 C 392 330 408 350 408 380 V 402 C 408 420 420 430 438 430"/>
+    <path d="M 438 430 H 718 C 738 430 752 449 747 468 L 704 634 C 699 653 682 666 663 666 H 505 C 486 666 469 653 464 634 L 421 468 C 416 449 424 430 438 430 Z"/>
+    <path d="M 500 666 V 712"/>
+    <path d="M 650 666 V 712"/>
+    <circle cx="500" cy="756" r="44"/>
+    <circle cx="650" cy="756" r="44"/>
+  </g>
+  <g fill="#141416" transform="translate(512 512) scale(1.12) translate(-566.8 -585)">
+    <circle cx="552" cy="574" r="46"/>
+    <circle cx="650" cy="568" r="38"/>
+    <circle cx="596" cy="494" r="34"/>
+  </g>
+</svg>

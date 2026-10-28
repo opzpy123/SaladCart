@@ -4,7 +4,7 @@
 
 SaladCart 使用 **Tauri 2 + Rust + React** 构建，原生支持 macOS 与 Windows。每个项目拥有独立的 SQLite 数据库、素材目录与成片目录。项目内的剧本、角色、风格圣经、分镜、配乐与生成任务互相引用；生成视频时自动组装上下文，先预览再付费。
 
-0.4.0 起界面采用参考 macOS 26 / iOS 26 的 Liquid Glass 视觉体系：深色玻璃侧栏、磨砂面板、系统蓝主交互色与 SF Pro 字体；0.4.1 将图标重做为透明玻璃购物车与三颗透光蔬果。规范见 [docs/design/ui-liquid-glass.md](docs/design/ui-liquid-glass.md)。
+0.4.0 起界面采用参考 macOS 26 / iOS 26 的 Liquid Glass 视觉体系：深色玻璃侧栏、磨砂面板、系统蓝主交互色与 SF Pro 字体；0.4.2 将图标收敛为 Qoder 风格的白色底、单色线稿购物车与三颗沙拉球。规范见 [docs/design/ui-liquid-glass.md](docs/design/ui-liquid-glass.md)。
 
 ![SaladCart native workstation](docs/assets/native-dashboard.png)
 
@@ -71,7 +71,7 @@ Windows: %APPDATA%\com.saladcart.studio
 
 ## 验证
 
-当前 v0.4.1 的自动化验证：
+当前 v0.4.2 的自动化验证：
 
 - Rust（29 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、长篇小说切章/分块改编、小说 LLM 分块契约、OpenAI Images 与 Kling 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
@@ -86,7 +86,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.4.1` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.4.1_aarch64.dmg`（SHA-256 `79515731ff6e79c6115b4f39b2c333caa5ab666e9b05a4e246e2b92137d29331`）。按项目要求跳过 Windows 打包，未发布 0.4.1 Windows 产物。校验值、安装提示与已知边界见 [docs/release-0.4.1.md](docs/release-0.4.1.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。本机未安装/登录 `gh`，未创建公开 GitHub Release。
+`v0.4.2` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.4.2_aarch64.dmg`（SHA-256 `cfef2ceecb05a8e419a16a8cf1a7e95acc87cf0ddb938c85f3a6a5ae5516827b`）。按项目要求跳过 Windows 打包，未发布 0.4.2 Windows 产物。校验值、安装提示与已知边界见 [docs/release-0.4.2.md](docs/release-0.4.2.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。本机未安装/登录 `gh`，未创建公开 GitHub Release。
 
 ## 产品研究
 

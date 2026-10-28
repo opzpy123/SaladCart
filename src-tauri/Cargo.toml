@@ -1,6 +1,6 @@
 [package]
 name = "saladcart"
-version = "0.4.1"
+version = "0.4.2"
 description = "SaladCart — native AI comic-drama production workstation"
 authors = ["SaladCart"]
 edition = "2021"
