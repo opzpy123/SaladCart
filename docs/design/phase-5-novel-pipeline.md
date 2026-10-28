@@ -65,7 +65,7 @@ pipeline runs offline.
 
 ## Verification record
 
-- `cargo test`: 28 automated Rust tests passed (10 unit incl. chapter/chunk/plan, 2 media,
-  2 provider contracts, 14 store incl. novel adaptation and grouping); 1 ignored TTS.
+- `cargo test`: 29 automated Rust tests passed (10 unit incl. chapter/chunk/plan, 2 media,
+  3 provider contracts, 14 store incl. novel adaptation and grouping); 1 ignored TTS.
 - `cargo check` passes; no schema migration errors on v8.
 - Phase artifact and UI walkthrough are delivered in Phase 6.

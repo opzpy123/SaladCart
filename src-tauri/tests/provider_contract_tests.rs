@@ -1,6 +1,10 @@
-use saladcart_lib::models::{ProviderCapabilities, ProviderProfile};
+use saladcart_lib::models::{
+    NovelAdaptRequest, NovelSource, NovelSummary, Project, ProviderCapabilities, ProviderProfile,
+    StyleBible,
+};
 use saladcart_lib::providers::image::{self, ImageRequest};
 use saladcart_lib::providers::video::{self, VideoRequest};
+use saladcart_lib::services::novel;
 use serde_json::json;
 use wiremock::matchers::{header, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -114,4 +118,112 @@ async fn kling_video_contract_submits_and_polls() {
         done.output_url.as_deref(),
         Some("https://cdn.example/v.mp4")
     );
+}
+
+#[tokio::test]
+async fn novel_llm_contract_turns_chunk_analyses_into_episodes() {
+    let server = MockServer::start().await;
+    let analysis = json!({
+        "summary": "沈知遥在雨夜发现钥匙会回应她的记忆。",
+        "characters": [{
+            "name": "沈知遥",
+            "role": "主角",
+            "appearance": "黑色短发，深灰风衣",
+            "personality": "克制",
+            "lockedTraits": ["黑色短发", "深灰风衣"]
+        }],
+        "beats": [
+            {
+                "title": "钥匙震动",
+                "summary": "她在积水里捡起钥匙，听见自己的声音。",
+                "location": "旧站台",
+                "timeOfDay": "NIGHT",
+                "characters": ["沈知遥"],
+                "dialogue": "沈知遥：它在叫我的名字。",
+                "visual": "雨夜特写，铜钥匙在积水中震动",
+                "camera": "slow push-in",
+                "durationSec": 5
+            },
+            {
+                "title": "旧店灯光",
+                "summary": "阿箬关掉一半的灯，警告她不要再读。",
+                "location": "旧物店",
+                "timeOfDay": "NIGHT",
+                "characters": ["沈知遥"],
+                "dialogue": "阿箬：你每读一次，就少一段自己的。",
+                "visual": "黄铜台灯下两人对峙",
+                "camera": "over-the-shoulder",
+                "durationSec": 6
+            }
+        ]
+    });
+    Mock::given(method("POST"))
+        .and(path("/chat/completions"))
+        .and(header("authorization", "Bearer test-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "choices": [{"message": {"content": analysis.to_string()}}]
+        })))
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let provider = profile("openai-llm", "llm", server.uri(), "gpt-4.1-mini");
+    let project = Project {
+        id: "project".into(),
+        name: "雨夜钥匙".into(),
+        premise: "旧物记忆".into(),
+        logline: String::new(),
+        genre: "悬疑".into(),
+        tone: "冷冽".into(),
+        language: "zh-CN".into(),
+        aspect_ratio: "9:16".into(),
+        target_episode_seconds: 90,
+        budget_cap: 0.0,
+        style_bible: StyleBible {
+            visual_style: "cinematic anime".into(),
+            palette: "emerald".into(),
+            lighting: "rain".into(),
+            camera_language: "storyboard".into(),
+            negative_prompt: "text".into(),
+            reference_notes: String::new(),
+        },
+        created_at: "2026-10-28T00:00:00Z".into(),
+        updated_at: "2026-10-28T00:00:00Z".into(),
+    };
+    let source = NovelSource {
+        summary: NovelSummary {
+            id: "current".into(),
+            title: "雨夜钥匙".into(),
+            source_path: None,
+            char_count: 140,
+            chapter_count: 2,
+            chunk_count: 2,
+            status: "ready".into(),
+            analysis: json!({}),
+            created_at: project.created_at.clone(),
+            updated_at: project.updated_at.clone(),
+        },
+        text: "第一章 雨夜\n沈知遥在旧站台捡到铜钥匙。\n第二章 旧店\n阿箬警告她不要再读。".into(),
+    };
+    let result = novel::adapt(
+        &provider,
+        Some("test-key"),
+        &project,
+        &source,
+        &NovelAdaptRequest::default(),
+        &|_, _| Ok(()),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.analysis["mode"], "llm");
+    assert_eq!(result.script.episodes.len(), 2);
+    assert_eq!(result.script.characters.len(), 1);
+    assert!(result
+        .script
+        .episodes
+        .iter()
+        .all(|episode| episode.scenes.len() == 2));
+    assert_eq!(result.chunk_count, 2);
+    assert_eq!(result.calls, 2);
 }

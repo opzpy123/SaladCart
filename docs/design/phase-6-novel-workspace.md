@@ -26,6 +26,6 @@
   badge "改编自《雨夜钥匙》" and 3 episodes / 12 shots.
 - Native macOS v0.3.0: 3-chapter novel → 3 episodes / 9 shots; job result "已完成";
   schema v8 source persisted and displayed in the header.
-- `cargo test`: 28 automated tests; `pnpm test`: 6/6; TypeScript and production build pass.
+- `cargo test`: 29 automated tests; `pnpm test`: 6/6; TypeScript and production build pass.
 - Artifact: `release/SaladCart_0.3.0_aarch64.dmg`
   (SHA-256 `37b0420fea0040a80adc8cc45f2d551911646a07f51dad1fc7637099b165932c`).

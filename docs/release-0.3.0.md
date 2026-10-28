@@ -39,7 +39,7 @@ System Settings → Privacy & Security → **Open Anyway** on first launch.
 
 - `pnpm exec tsc --noEmit` — passed.
 - `pnpm test` — 6/6 frontend tests passed.
-- `cargo test` — 28/28 automated Rust tests passed, plus an ignored macOS system-TTS
+- `cargo test` — 29/29 automated Rust tests passed, plus an ignored macOS system-TTS
   test. New coverage: Chinese/English chapter splitting, chunk limits/plan counts,
   novel source persistence, 3-chapter adaptation, episode grouping, and the existing
   store/media/provider/budget/take suites.
