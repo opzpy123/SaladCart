@@ -81,6 +81,12 @@ jobs:
         env:
           SALADCART_FFMPEG: ${{ github.workspace }}\src-tauri\binaries\ffmpeg-${{ matrix.target_triple }}.exe
         run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Run Windows TTS smoke test
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        env:
+          SALADCART_FFMPEG: ${{ github.workspace }}\src-tauri\binaries\ffmpeg-${{ matrix.target_triple }}.exe
+        run: cargo test --manifest-path src-tauri/Cargo.toml system_tts_generates_a_voice_asset -- --ignored --nocapture
       - name: Build installers (macOS)
         if: startsWith(matrix.platform, 'macos')
         run: |

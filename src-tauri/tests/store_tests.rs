@@ -436,7 +436,7 @@ fn provenance_manifest_captures_lineage() {
 }
 
 #[tokio::test]
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 #[ignore = "requires a system TTS voice; run manually with --ignored"]
 async fn system_tts_generates_a_voice_asset() {
     let temp = tempfile::tempdir().unwrap();
@@ -447,6 +447,16 @@ async fn system_tts_generates_a_voice_asset() {
         .apply_generated_script(generated_script(), &request)
         .unwrap();
     let shot = store.shots_in_order().unwrap().remove(0);
+    #[cfg(target_os = "windows")]
+    store
+        .update_shot(
+            &shot.id,
+            UpdateShotInput {
+                dialogue: Some("Hello from SaladCart. This is a voice test.".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
     let asset = saladcart_lib::services::voice::generate(&paths, &store.project_id, &shot.id, None)
         .await
         .unwrap();
