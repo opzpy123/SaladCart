@@ -556,6 +556,11 @@ async fn llm_adaptation(
             }
         }
     }
+    if merged.is_empty() {
+        return Err(AppError::Provider(
+            "the model returned no recurring characters; retry with a stronger model".into(),
+        ));
+    }
     let character_names: Vec<String> = merged.keys().cloned().collect();
     let style = if project.style_bible.visual_style.trim().is_empty() {
         preset_style(Some("anime-cel"))
