@@ -17,8 +17,8 @@ artifact and verification record are committed.
 - [ ] `pnpm test`
 - [ ] `cargo test --manifest-path src-tauri/Cargo.toml`
 - [ ] `pnpm build`
-- [ ] `pnpm check:windows` (compile-only Windows gate; real Windows runner required
-      for runtime validation)
+- [ ] `pnpm check:windows` (compile-only) and CI Windows tests with the bundled
+      sidecar + SAPI TTS smoke test (runtime validation on a Windows runner)
 - [ ] No provider keys or `.env` files in `git status`.
 
 ## 3. Native macOS walkthrough
