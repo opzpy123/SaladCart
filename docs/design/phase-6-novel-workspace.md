@@ -2,7 +2,7 @@
 
 ## Scope
 
-- Script Studio entry "小说改编" opens a wide dialog.
+- Dashboard pipeline and Script Studio both expose "小说改编"; either opens a wide dialog.
 - Paste text or import `.txt/.md/.text`: desktop uses the native file dialog and
   `read_novel_file`; the browser demo uses a file input and `File.text()`.
 - Live plan (chars/chapters/chunks/estimated calls) via `preview_novel`, debounced.

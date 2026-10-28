@@ -1,5 +1,6 @@
 import {
   ArrowUpRight,
+  BookOpen,
   CheckCircle2,
   Clapperboard,
   Clock3,
@@ -35,6 +36,7 @@ export function ProjectDashboard() {
   const settings = useAppStore((s) => s.settings);
   const openProject = useAppStore((s) => s.openProject);
   const setNewProject = useAppStore((s) => s.setShowNewProject);
+  const setNovelDialog = useAppStore((s) => s.setShowNovelDialog);
   const setRoute = useAppStore((s) => s.setRoute);
   const archive = useAppStore((s) => s.archiveProject);
   const createDemo = useAppStore((s) => s.createDemo);
@@ -186,6 +188,14 @@ export function ProjectDashboard() {
         <div className="panel dashboard-pipeline">
           <SectionHeader title="生产流水线" subtitle={activeSummary ? `当前：${activeSummary.name}` : "创建项目后自动启用"} />
           <div className="pipeline-list">
+            <PipelineStep
+              icon={<BookOpen size={16} />}
+              label="小说改编"
+              value={snapshot?.novel ? `${snapshot.novel.chapterCount} 章 · ${snapshot.novel.status === "adapted" ? "已改编" : "已入库"}` : "粘贴 / 导入"}
+              hint="整本小说 → 分集 · 场景 · 分镜"
+              done={Boolean(snapshot?.novel)}
+              onClick={() => snapshot && setNovelDialog(true)}
+            />
             <PipelineStep icon={<Sparkles size={16} />} label="剧本与分镜" value={counts ? `${counts.episodes} 集 · ${counts.scenes} 场` : "等待开始"} hint={counts?.shots ? `${counts.shots} 个镜头` : "从一句立意生成"} done={Boolean(counts?.shots)} onClick={() => snapshot && setRoute("script")} />
             <PipelineStep icon={<Users size={16} />} label="角色锁定" value={counts ? `${counts.characters} 个角色` : "未建角色"} hint="定妆照 + 特征锁" done={Boolean(counts?.characters)} onClick={() => snapshot && setRoute("characters")} />
             <PipelineStep icon={<ImageIcon size={16} />} label="画面与抽卡" value={counts ? `${counts.images} 张素材` : "未生成"} hint="上下文预览 · 成本估算" done={Boolean(counts?.images)} onClick={() => snapshot && setRoute("shots")} />
