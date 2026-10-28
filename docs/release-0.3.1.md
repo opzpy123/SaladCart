@@ -9,8 +9,8 @@ still needs a real Windows desktop session.
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
-| macOS 11+ arm64 | `release/SaladCart_0.3.1_aarch64.dmg` | 21.9 MB | `c2ac96ffe4d490ba0f9133d580790dd6bfd55314b3daa558ccc4b98e24ecf157` |
-| Windows 10/11 x64 (portable) | `release/SaladCart_0.3.1_windows-x64-portable.zip` | 26 MB | `f25eb41aab4dd7ebec175f6d7c1b498e72c91c47d129aa79a7f9f929088f810f` |
+| macOS 11+ arm64 | `release/SaladCart_0.3.1_aarch64.dmg` | 21.9 MB | `b2e86e6bf4e171170f63c9b4029e77c01a11c11cd471be3d0eaeb6a8af93a216` |
+| Windows 10/11 x64 (portable) | `release/SaladCart_0.3.1_windows-x64-portable.zip` | 26 MB | `218034f622cf0d2fa9b434dea7ab5892c05e77a02c60ea3808403020f5a00d21` |
 
 The macOS DMG is **not signed or notarized**. Right-click → **Open** or use Privacy &
 Security → **Open Anyway** on first launch.
@@ -30,6 +30,7 @@ CI NSIS/MSI installer remains the primary distribution path. It is unsigned.
 - Windows delivery gate: CI now runs a Windows SAPI TTS smoke test, builds installers
   with the local pnpm/Tauri CLI instead of tauri-action, and publishes `build.log` to
   the status branch when a platform fails.
+- Adds `--selftest`: a headless self-check that seeds the demo project, assembles the timeline, renders a 19-second MP4 and writes `saladcart-selftest.log`. The packaged macOS app and Windows portable binary include it.
 - Version bumps to 0.3.1.
 
 ## Verification
@@ -41,8 +42,11 @@ CI NSIS/MSI installer remains the primary distribution path. It is unsigned.
   badge, take switching, budget, import dialog, voice track and 19s 1080×1920 export
   verified in prior phases. 0.3.1 DMG contains the dashboard entry and validation fix.
 - Windows: `cargo xwin check` passes; release `saladcart.exe` (PE32+ GUI x64) and the
-  real FFmpeg 4.1 sidecar were cross-built and zipped. No Windows GUI/TTS runtime
-  session was available locally.
+  real FFmpeg 4.1 sidecar were cross-built and zipped. `saladcart.exe --selftest` is
+  wired into the Windows CI gate; no Windows GUI/TTS runtime session was available
+  locally.
+- macOS packaged `.app` -> `saladcart --selftest`: exit 0, 4 clips, 19,000 ms MP4,
+  423,595 bytes.
 - CI: earlier Windows matrix runs completed the bundled-FFmpeg Rust tests successfully;
   the new direct-build + TTS/logging workflow is committed, but GitHub Actions had not
   yet produced a new status branch for the latest commits at release time.

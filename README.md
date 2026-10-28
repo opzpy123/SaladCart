@@ -30,6 +30,7 @@ pnpm dev:tauri      # 原生桌面开发模式
 pnpm test           # 前端测试
 pnpm test:rust      # Rust 测试
 pnpm check:windows  # Windows 目标编译门禁（cargo-xwin）
+# 打包后的二进制可跑无界面自检：saladcart --selftest
 pnpm build:tauri    # 打包当前平台
 pnpm seed:demo      # 向本机工作区注入一部完整演示项目（剧本/角色/视频/配乐）
 ```
@@ -72,6 +73,7 @@ Windows: %APPDATA%\com.saladcart.studio
 
 - Rust（29 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、长篇小说切章/分块改编、小说 LLM 分块契约、OpenAI Images 与 Kling 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
+- 发布自检：macOS 打包 `.app` 执行 `saladcart --selftest` 成功（4 片段、19 秒 MP4、423,595 字节）；Windows 便携包同样带自检。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、3 章小说改编为 3 集 9 镜、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
 
@@ -82,7 +84,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.3.1` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.3.1_aarch64.dmg`（SHA-256 `c2ac96ffe4d490ba0f9133d580790dd6bfd55314b3daa558ccc4b98e24ecf157`），Windows x64 便携包在 `release/SaladCart_0.3.1_windows-x64-portable.zip`（SHA-256 `f25eb41aab4dd7ebec175f6d7c1b498e72c91c47d129aa79a7f9f929088f810f`）。校验值、安装提示与已知边界见 [docs/release-0.3.1.md](docs/release-0.3.1.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows CI 安装包仍在构建队列中；本机未安装/登录 `gh`，未创建公开 GitHub Release。
+`v0.3.1` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.3.1_aarch64.dmg`（SHA-256 `b2e86e6bf4e171170f63c9b4029e77c01a11c11cd471be3d0eaeb6a8af93a216`），Windows x64 便携包在 `release/SaladCart_0.3.1_windows-x64-portable.zip`（SHA-256 `218034f622cf0d2fa9b434dea7ab5892c05e77a02c60ea3808403020f5a00d21`）。校验值、安装提示与已知边界见 [docs/release-0.3.1.md](docs/release-0.3.1.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows CI 安装包仍在构建队列中；本机未安装/登录 `gh`，未创建公开 GitHub Release。
 
 ## 产品研究
 

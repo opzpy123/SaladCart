@@ -33,6 +33,7 @@ artifact and verification record are committed.
 ## 4. Windows runtime gate (requires Windows)
 
 - [ ] Build/install the NSIS or MSI artifact on Windows 10/11 x64.
+- [ ] Run `saladcart.exe --selftest`; require exit 0 and a 19-second MP4 in the log.
 - [ ] Launch with WebView2, create/open a project, and confirm images load.
 - [ ] Generate system TTS with Chinese dialogue (zh-CN SAPI voice required).
 - [ ] Export a timeline with source audio, music and voice; verify the 4.1 sidecar

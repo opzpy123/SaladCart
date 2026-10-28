@@ -5,6 +5,7 @@ pub mod models;
 pub mod paths;
 pub mod providers;
 pub mod secrets;
+pub mod selftest;
 pub mod services;
 pub mod settings;
 pub mod state;
