@@ -75,7 +75,7 @@ Rejected: Electron (large runtime, weaker native story), Flutter (media timeline
     <uuid>/
       project.db         # WAL SQLite; all project state
       project.json       # portable display metadata + schema version
-      assets/images|videos|audio/
+      assets/images|videos|audio|novels/
       thumbs/
       exports/
   trash/                 # archived projects, never hard-deleted by UI
@@ -103,6 +103,7 @@ All IDs are UUIDs. Times are ISO-8601 UTC strings; durations are integer millise
 - Assets are written under the project folder and registered transactionally. A failed file write never leaves a dangling asset row.
 - Timeline auto-assembly selects each shot's current video in episode/scene/shot order; callers can request approved-only assembly. Older takes are retained in the `shot_takes` table and selectable from the shot inspector; selecting one resets the shot to `needs_review`.
 - Image/video and music enqueue check the project budget cap against committed estimates/actuals before creating a job.
+- Novel adaptation stores one `novel_source` row plus `assets/novels/novel.txt`, splits chapters (Chinese/English headings), chunks at 6,000 characters, merges characters by name and writes episodes/scenes/shots through the same script transaction. The novel job is capped at 120 chunks and 60 episodes.
 
 ## 6. Context compiler (the differentiator)
 

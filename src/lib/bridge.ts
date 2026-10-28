@@ -29,6 +29,17 @@ export async function pickAssetPaths(): Promise<string[] | null> {
   return Array.isArray(selected) ? selected : [selected];
 }
 
+export async function pickNovelFile(): Promise<string | null> {
+  if (!isTauri) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({
+    multiple: false,
+    title: "导入小说",
+    filters: [{ name: "小说文本", extensions: ["txt", "md", "text"] }],
+  });
+  return typeof selected === "string" ? selected : null;
+}
+
 export async function invoke<T>(
   command: string,
   args: Record<string, unknown> = {},

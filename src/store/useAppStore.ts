@@ -14,6 +14,8 @@ import type {
   MusicGenerationRequest,
   MusicSearchResult,
   MusicTrack,
+  NovelAdaptRequest,
+  NovelInput,
   PreferencesPatch,
   ProjectReference,
   ProjectSnapshot,
@@ -56,6 +58,7 @@ interface AppStore {
   selectedShotIds: string[];
   showNewProject: boolean;
   showScriptDialog: boolean;
+  showNovelDialog: boolean;
   jobDockOpen: boolean;
   contextOpen: boolean;
   contextLoading: boolean;
@@ -82,12 +85,14 @@ interface AppStore {
   setShotSelection: (ids: string[]) => void;
   setShowNewProject: (open: boolean) => void;
   setShowScriptDialog: (open: boolean) => void;
+  setShowNovelDialog: (open: boolean) => void;
   setJobDockOpen: (open: boolean) => void;
   closeContext: () => void;
   pushToast: (kind: Toast["kind"], title: string, message?: string) => void;
   removeToast: (id: string) => void;
 
   generateScript: (overrides?: Partial<GenerateScriptRequest>) => Promise<void>;
+  startNovelAdaptation: (novel: NovelInput, options: NovelAdaptRequest) => Promise<void>;
   generateCharacter: (characterId: string, variant: "portrait" | "sheet") => Promise<void>;
   generateVoice: (shotId: string) => Promise<void>;
   generateVoices: (shotIds: string[]) => Promise<void>;
@@ -246,6 +251,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
     selectedShotIds: [],
     showNewProject: false,
     showScriptDialog: false,
+    showNovelDialog: false,
     jobDockOpen: false,
     contextOpen: false,
     contextLoading: false,
@@ -478,6 +484,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
     setShotSelection: (ids) => set({ selectedShotIds: ids }),
     setShowNewProject: (open) => set({ showNewProject: open }),
     setShowScriptDialog: (open) => set({ showScriptDialog: open }),
+    setShowNovelDialog: (open) => set({ showNovelDialog: open }),
     setJobDockOpen: (open) => set({ jobDockOpen: open }),
     closeContext: () => set({ contextOpen: false, contextPreview: null }),
     pushToast,
@@ -511,6 +518,25 @@ export const useAppStore = create<AppStore>()((set, get) => {
         pushToast("info", "剧本生成已入队", `${job.providerLabel} · ${job.model}`);
       } catch (error) {
         pushToast("error", "无法启动剧本生成", formatError(error));
+      }
+    },
+
+    startNovelAdaptation: async (novel, options) => {
+      const snapshot = get().snapshot;
+      if (!snapshot) return;
+      try {
+        const job = await invoke<GenerationJob>("start_novel_adaptation", {
+          projectId: snapshot.project.id,
+          novel,
+          options,
+        });
+        get().upsertJob(job);
+        set({ showNovelDialog: false, route: "script", jobDockOpen: true });
+        await get().refreshSnapshot(true);
+        pushToast("info", "小说已入库，改编任务已入队", job.requestSummary);
+      } catch (error) {
+        pushToast("error", "无法启动小说改编", formatError(error));
+        throw error;
       }
     },
 
@@ -1089,6 +1115,8 @@ export const useAppStore = create<AppStore>()((set, get) => {
           pushToast("success", "成片已导出", String(job.result?.path ?? ""));
         } else if (job.kind === "script") {
           pushToast("success", "剧本已写进项目", "分集、场景和分镜已同步");
+        } else if (job.kind === "novel") {
+          pushToast("success", "小说改编已完成", `${job.result?.episodes ?? 0} 集 · ${job.result?.shots ?? 0} 个分镜`);
         } else if (job.kind === "music") {
           set({ musicAnalysis: null });
           pushToast("success", "AI 配乐已完成", "可在剪辑台试听与卡点");

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import {
   ArrowRight,
+  BookOpen,
   Check,
   Clapperboard,
   Clock3,
@@ -32,6 +33,7 @@ export function ScriptStudio() {
   const selectScene = useAppStore((s) => s.selectScene);
   const selectShot = useAppStore((s) => s.selectShot);
   const setScriptDialog = useAppStore((s) => s.setShowScriptDialog);
+  const setNovelDialog = useAppStore((s) => s.setShowNovelDialog);
   const saveScene = useAppStore((s) => s.saveScene);
   const saveShot = useAppStore((s) => s.saveShot);
   const generateShot = useAppStore((s) => s.generateShot);
@@ -55,6 +57,12 @@ export function ScriptStudio() {
           <p className="workspace-head__sub">
             {snapshot.project.logline || "从一个能拍成镜头的故事开始。"}
           </p>
+          {snapshot.novel ? (
+            <p className="novel-badge">
+              改编自《{snapshot.novel.title}》 · {snapshot.novel.chapterCount} 章 ·{" "}
+              {snapshot.novel.charCount.toLocaleString()} 字
+            </p>
+          ) : null}
         </div>
         <div className="workspace-head__actions">
           <div className="head-stat">
@@ -67,6 +75,9 @@ export function ScriptStudio() {
               {rendered}/{shots.length}
             </strong>
           </div>
+          <Button variant="secondary" icon={<BookOpen size={15} />} onClick={() => setNovelDialog(true)}>
+            小说改编
+          </Button>
           <Button variant="secondary" icon={<Wand2 size={15} />} onClick={() => setScriptDialog(true)}>
             AI 生成 / 重写
           </Button>

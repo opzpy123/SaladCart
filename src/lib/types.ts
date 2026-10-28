@@ -231,6 +231,51 @@ export interface Timeline {
   updatedAt: string;
 }
 
+export interface NovelSummary {
+  id: string;
+  title: string;
+  sourcePath: string | null;
+  charCount: number;
+  chapterCount: number;
+  chunkCount: number;
+  status: string;
+  analysis: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NovelSource extends NovelSummary {
+  text: string;
+}
+
+export interface NovelChapterInfo {
+  index: number;
+  title: string;
+  charCount: number;
+}
+
+export interface NovelPlan {
+  charCount: number;
+  chapterCount: number;
+  chunkCount: number;
+  estimatedCalls: number;
+  chapters: NovelChapterInfo[];
+}
+
+export interface NovelInput {
+  title: string;
+  text: string;
+  sourcePath?: string | null;
+}
+
+export interface NovelAdaptRequest {
+  providerId?: string | null;
+  model?: string | null;
+  maxEpisodes: number;
+  styleNotes: string;
+  replaceExisting: boolean;
+}
+
 export interface ProjectSnapshot {
   project: Project;
   characters: Character[];
@@ -238,6 +283,7 @@ export interface ProjectSnapshot {
   assets: Asset[];
   jobs: GenerationJob[];
   timeline: Timeline;
+  novel: NovelSummary | null;
   storagePath: string;
 }
 

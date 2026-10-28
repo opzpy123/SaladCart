@@ -21,7 +21,7 @@ import { ShotStudio } from "@/screens/ShotStudio";
 import { EditorScreen } from "@/screens/Editor";
 import { AssetLibrary } from "@/screens/AssetLibrary";
 import { SettingsScreen } from "@/screens/SettingsScreen";
-import { NewProjectDialog, GenerateScriptDialog } from "@/components/Dialogs";
+import { NewProjectDialog, GenerateScriptDialog, NovelAdaptDialog } from "@/components/Dialogs";
 import { ContextDrawer } from "@/components/ContextDrawer";
 import { JobDock } from "@/components/JobDock";
 import { Toasts } from "@/components/Toasts";
@@ -140,6 +140,7 @@ export default function App() {
       <JobDock />
       <NewProjectDialog />
       <GenerateScriptDialog />
+      <NovelAdaptDialog />
       <Toasts />
     </div>
   );

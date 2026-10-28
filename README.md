@@ -10,7 +10,7 @@ SaladCart 使用 **Tauri 2 + Rust + React** 构建，原生支持 macOS 与 Wind
 
 浏览器生成器只解决“生成一次”，SaladCart 解决一部漫剧的循环：
 
-1. **从立意到分镜**：LLM 一次产出故事圣经、角色、分集、场景和镜头（机位、镜头、时长、对白、声音）。
+1. **从小说或立意到分镜**：粘贴/导入完整小说，按章切分、分块理解并跨章合并角色，自动产出故事圣经、分集、场景和镜头；也可以从一句立意直接生成。
 2. **角色锁定**：角色圣经 + 定妆照/三视图 + 硬性特征锁，生成每个镜头时自动注入。
 3. **上下文可见**：发送前看到最终提示词、角色参考、连续性、画幅与成本。上下文编译器是产品核心。
 4. **批量抽卡与选片**：持久化任务队列、并发上限、失败重试；镜头历史 take 可切换，切换后自动回到待审；每次 take 保留版本、seed、模型与父资产。
@@ -68,11 +68,11 @@ Windows: %APPDATA%\com.saladcart.studio
 
 ## 验证
 
-当前 v0.2.0 的自动化验证：
+当前 v0.3.0 的自动化验证：
 
-- Rust（24 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、OpenAI Images 与 Kling 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
+- Rust（28 项自动 + 1 项 macOS TTS 手动）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、长篇小说切章/分块改编、OpenAI Images 与 Kling 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音。
 - 前端（6 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点。
-- 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
+- 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、3 章小说改编为 3 集 9 镜、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
 
 ```bash
@@ -82,19 +82,20 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.2.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.2.0_aarch64.dmg`（SHA-256 `484f642fc7acf5cf718298223db7ed58c4c3594eb198064a0d8dd089a94fb29d`，包含 take 治理、素材导入、项目预算与 Windows 编译门禁），校验值、安装提示与已知边界见 [docs/release-0.2.0.md](docs/release-0.2.0.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows 构建在 GitHub Actions 矩阵中，目标已通过 `cargo xwin check`，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.3.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.3.0_aarch64.dmg`（SHA-256 `37b0420fea0040a80adc8cc45f2d551911646a07f51dad1fc7637099b165932c`，包含长篇小说改编、take 治理、素材导入与项目预算），校验值、安装提示与已知边界见 [docs/release-0.3.0.md](docs/release-0.3.0.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows 构建在 GitHub Actions 矩阵中，目标已通过 `cargo xwin check`，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
 
 ## 产品研究
 
 AI 漫剧的真实生产痛点、证据来源与逐项对策见 [docs/pain-points.md](docs/pain-points.md)。架构与阶段决策见 [docs/architecture.md](docs/architecture.md)。
 
-## 已知边界（v0.2）
+## 已知边界（v0.3）
 
+- 每个项目当前保留一部小说源；一次改编最多 120 个分析块（约 72 万字），更长的小说需分卷。
 - 尚未集成评论、角色权限、共享审片与备案清单导出；审片状态是单机数据，不构成多用户审批记录。
 - 视频供应商当前只接收一张首帧图，多参考图输入尚未发送。
 - 自动卡点使用轻量 Rust DSP，不含 downbeat ML；可后续接入 Beat This 做可选高精度分析。
 - Kling / Luma / MiniMax / Veo 等视频 API 的路径、模型名与账号区域会变化；适配器保留 provider options 覆盖与原始错误，不做假成功。
-- 未包含口型同步、声音克隆与多轨 NLE；v0.2 聚焦从生成到可交付粗剪的闭环。
+- 未包含口型同步、声音克隆与多轨 NLE；v0.3 聚焦从长篇小说到可交付粗剪的闭环。
 - 发布产物未签名/未公证，生产分发前需配置 Apple Developer 与 Windows 代码签名证书。
 
 ## License

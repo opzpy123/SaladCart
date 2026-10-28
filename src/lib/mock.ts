@@ -13,6 +13,10 @@ import type {
   MusicGenerationRequest,
   MusicSearchResult,
   MusicTrack,
+  NovelAdaptRequest,
+  NovelInput,
+  NovelPlan,
+  NovelSummary,
   PreferencesPatch,
   Project,
   ProjectReference,
@@ -495,6 +499,7 @@ function aiJob(
 }
 
 const secondProject: ProjectSnapshot | null = null;
+let novelText = "";
 let snapshot: ProjectSnapshot = {
   project,
   characters,
@@ -502,6 +507,7 @@ let snapshot: ProjectSnapshot = {
   assets,
   jobs: pastJobs,
   timeline,
+  novel: null,
   storagePath: "~/Library/Application Support/com.saladcart.studio/projects/demo-fog-harbor",
 };
 let projects: ProjectSummary[] = [summaryOf(snapshot)];
@@ -844,6 +850,88 @@ function generateScriptContent(request: GenerateScriptRequest) {
   if (snapshot.characters.length === 0) snapshot.characters = cast as Character[];
 }
 
+function splitMockNovel(text: string): Array<{ title: string; text: string }> {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const chapters: Array<{ title: string; text: string }> = [];
+  let title = "";
+  let body: string[] = [];
+  const flush = () => {
+    const content = body.join("\n").trim();
+    if (content.length < 2) {
+      body = [];
+      return;
+    }
+    chapters.push({ title: title || `第${chapters.length + 1}节`, text: content });
+    body = [];
+  };
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const heading =
+      trimmed.length > 0 &&
+      trimmed.length <= 60 &&
+      (/^第[0-9一二三四五六七八九十百千]+[章回节卷]/.test(trimmed) ||
+        /^chapter\s+\d+/i.test(trimmed) ||
+        trimmed.startsWith("#") ||
+        trimmed.startsWith("序章") ||
+        trimmed.startsWith("楔子"));
+    if (heading) {
+      flush();
+      title = trimmed.replace(/^#+\s*/, "");
+    } else {
+      body.push(line);
+    }
+  }
+  flush();
+  if (!chapters.length && text.trim()) chapters.push({ title: "全文", text: text.trim() });
+  return chapters;
+}
+
+function novelPlan(text: string): NovelPlan {
+  const chapters = splitMockNovel(text);
+  const chunkCount = chapters.reduce((sum, chapter) => sum + Math.max(1, Math.ceil(chapter.text.length / 6000)), 0);
+  return {
+    charCount: text.trim().length,
+    chapterCount: chapters.length,
+    chunkCount,
+    estimatedCalls: chunkCount,
+    chapters: chapters.map((chapter, index) => ({
+      index: index + 1,
+      title: chapter.title,
+      charCount: chapter.text.length,
+    })),
+  };
+}
+
+function expandNovelEpisodes(chapters: Array<{ title: string; text: string }>, maxEpisodes: number): Episode[] {
+  const base = snapshot.episodes[0];
+  if (!base) return [];
+  const count = Math.max(1, Math.min(chapters.length, maxEpisodes > 0 ? maxEpisodes : chapters.length, 8));
+  return Array.from({ length: count }, (_, index) => {
+    const chapter = chapters[index] ?? chapters[chapters.length - 1];
+    const episodeId = uid();
+    return {
+      ...structuredClone(base),
+      id: episodeId,
+      orderIndex: index,
+      title: `第${index + 1}集 · ${chapter.title}`,
+      summary: chapter.text.slice(0, 180),
+      scenes: base.scenes.map((scene) => {
+        const sceneId = uid();
+        return {
+          ...structuredClone(scene),
+          id: sceneId,
+          episodeId,
+          title: `第${index + 1}集 · ${chapter.title}`,
+          synopsis: chapter.text.slice(0, 160),
+          shots: scene.shots.map((shot) => ({ ...structuredClone(shot), id: uid(), sceneId })),
+        };
+      }),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+  });
+}
+
 async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): Promise<T> {
   await sleep(30);
   switch (cmd) {
@@ -879,6 +967,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
         episodes: [],
         assets: [],
         jobs: [],
+        novel: null,
         timeline: {
           id: uid(),
           name: "Main cut",
@@ -1059,6 +1148,88 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
     }
     case "get_context_preview":
       return contextFor(args.request as GenerationRequest) as T;
+    case "preview_novel": {
+      const input = args.input as NovelInput;
+      if (input.text.trim().length < 50) throw new Error("小说正文至少 50 个字符");
+      return novelPlan(input.text) as T;
+    }
+    case "get_novel": {
+      return (snapshot.novel ? { ...snapshot.novel, text: novelText } : null) as T;
+    }
+    case "start_novel_adaptation": {
+      const input = args.novel as NovelInput;
+      const options = args.options as NovelAdaptRequest;
+      if (input.text.trim().length < 50) throw new Error("小说正文至少 50 个字符");
+      const chapters = splitMockNovel(input.text);
+      const plan = novelPlan(input.text);
+      novelText = input.text;
+      snapshot.novel = {
+        id: "mock-novel",
+        title: input.title.trim() || chapters[0]?.title || "未命名小说",
+        sourcePath: input.sourcePath ?? null,
+        charCount: plan.charCount,
+        chapterCount: plan.chapterCount,
+        chunkCount: plan.chunkCount,
+        status: "ready",
+        analysis: {},
+        createdAt: now(),
+        updatedAt: now(),
+      };
+      const job = newJob(
+        "novel",
+        "project",
+        snapshot.project.id,
+        "mock-llm",
+        "Mock 编剧 (离线)",
+        "saladcart-mock-llm",
+        `小说改编 · ${plan.chapterCount} 章 · ${plan.chunkCount} 块`,
+        options as unknown as Record<string, unknown>,
+      );
+      void simulate(
+        job,
+        [[8, "splitting chapters"], [32, "analyzing chapters"], [62, "merging characters"], [82, "breaking down shots"]],
+        () => {
+          generateScriptContent({
+            premise: input.text.slice(0, 300),
+            genre: snapshot.project.genre,
+            tone: snapshot.project.tone,
+            language: snapshot.project.language,
+            episodes: 1,
+            scenesPerEpisode: 1,
+            shotsPerScene: 3,
+            styleNotes: options.styleNotes,
+            providerId: "mock-llm",
+            model: null,
+            replaceExisting: true,
+            seed: null,
+          });
+          snapshot.episodes = expandNovelEpisodes(chapters, options.maxEpisodes);
+          snapshot.novel = {
+            ...snapshot.novel!,
+            status: "adapted",
+            analysis: {
+              mode: "mock",
+              chapters: chapters.map((chapter, index) => ({
+                index: index + 1,
+                title: chapter.title,
+                summary: chapter.text.slice(0, 180),
+              })),
+            },
+            updatedAt: now(),
+          };
+          job.result = {
+            chapters: plan.chapterCount,
+            episodes: snapshot.episodes.length,
+            scenes: snapshot.episodes.reduce((sum, episode) => sum + episode.scenes.length, 0),
+            shots: snapshot.episodes.reduce(
+              (sum, episode) => sum + episode.scenes.reduce((inner, scene) => inner + scene.shots.length, 0),
+              0,
+            ),
+          };
+        },
+      );
+      return job as T;
+    }
     case "generate_script": {
       const request = args.request as GenerateScriptRequest;
       const job = newJob(
@@ -1324,7 +1495,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
         ffmpegPath: "/opt/homebrew/bin/ffmpeg",
         ffmpegVersion: "ffmpeg version 8.0 (demo bridge)",
         platform: "browser demo · 原生构建请使用 Tauri",
-        appVersion: "0.2.0",
+        appVersion: "0.3.0",
         storageDir: "~/Library/Application Support/com.saladcart.studio",
         projectCount: projects.length,
         dataDir: "~/Library/Application Support/com.saladcart.studio",

@@ -16,6 +16,7 @@ import { Button, IconButton, Progress, StatusPill, cx } from "./ui";
 
 const KIND_LABEL: Record<string, string> = {
   script: "剧本",
+  novel: "小说改编",
   image: "画面",
   video: "视频",
   export: "导出",

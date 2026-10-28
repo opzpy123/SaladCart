@@ -305,6 +305,25 @@ pub fn retry_job(
                 .map_err(|e| AppError::Invalid(format!("bad music request: {e}")))?;
             enqueue_music(app, state, project_id, request)
         }
+        "novel" => {
+            let options: NovelAdaptRequest = serde_json::from_value(job.request)
+                .map_err(|e| AppError::Invalid(format!("bad novel request: {e}")))?;
+            let store = ProjectStore::open(&state.paths, project_id)?;
+            let source = store
+                .novel_source()?
+                .ok_or_else(|| AppError::NotFound("novel source".into()))?;
+            enqueue_novel(
+                app,
+                state,
+                project_id,
+                NovelInput {
+                    title: source.summary.title,
+                    text: source.text,
+                    source_path: source.summary.source_path,
+                },
+                options,
+            )
+        }
         other => Err(AppError::Invalid(format!(
             "retry is not supported for {other} jobs"
         ))),

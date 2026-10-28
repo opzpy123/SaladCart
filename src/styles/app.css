@@ -4965,3 +4965,37 @@ textarea.editable {
 .toolbar-check input {
   accent-color: var(--accent-strong);
 }
+
+.novel-badge {
+  display: inline-flex;
+  margin: 7px 0 0;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  font-size: 9px;
+}
+.novel-textarea {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.novel-plan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 12px;
+}
+.novel-plan span {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  color: var(--muted);
+  font-size: 9px;
+}
+.novel-plan strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}

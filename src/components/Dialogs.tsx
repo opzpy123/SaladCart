@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { Clapperboard, Sparkles, Wand2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { BookOpen, Clapperboard, Sparkles, Upload, Wand2 } from "lucide-react";
 import { Button, Field, InlineNotice, Modal } from "./ui";
+import { formatError, invoke, isDesktop, pickNovelFile } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
-import type { GenerateScriptRequest } from "@/lib/types";
+import type { GenerateScriptRequest, NovelPlan } from "@/lib/types";
 
 const STYLE_PRESETS = [
   {
@@ -358,6 +359,224 @@ export function GenerateScriptDialog() {
           </label>
         ) : null}
       </div>
+    </Modal>
+  );
+}
+
+export function NovelAdaptDialog() {
+  const open = useAppStore((s) => s.showNovelDialog);
+  const setOpen = useAppStore((s) => s.setShowNovelDialog);
+  const snapshot = useAppStore((s) => s.snapshot);
+  const settings = useAppStore((s) => s.settings);
+  const startAdaptation = useAppStore((s) => s.startNovelAdaptation);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [providerId, setProviderId] = useState("");
+  const [maxEpisodes, setMaxEpisodes] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [replace, setReplace] = useState(true);
+  const [plan, setPlan] = useState<NovelPlan | null>(null);
+  const [planning, setPlanning] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle("");
+    setText("");
+    setProviderId(settings?.defaults.llm ?? "");
+    setMaxEpisodes(0);
+    setNotes("");
+    setReplace(true);
+    setPlan(null);
+    setError("");
+  }, [open, settings?.defaults.llm]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (text.trim().length < 50) {
+      setPlan(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setPlanning(true);
+      try {
+        const next = await invoke<NovelPlan>("preview_novel", {
+          input: { title, text, sourcePath: null },
+        });
+        setPlan(next);
+      } catch {
+        setPlan(null);
+      } finally {
+        setPlanning(false);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [open, text, title]);
+
+  if (!snapshot) return null;
+  const llms = settings?.providers.filter((provider) => provider.kind === "llm") ?? [];
+
+  const applyText = (content: string, name?: string) => {
+    setText(content);
+    if (!title.trim() && name) {
+      setTitle(name.replace(/\.[^.]+$/, ""));
+    }
+  };
+
+  const importNovel = async () => {
+    if (!isDesktop) {
+      fileInputRef.current?.click();
+      return;
+    }
+    setImporting(true);
+    try {
+      const path = await pickNovelFile();
+      if (!path) return;
+      const content = await invoke<string>("read_novel_file", { path });
+      applyText(content, path.split(/[\\/]/).pop());
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const submit = async () => {
+    if (text.trim().length < 50) {
+      setError("先粘贴或导入正文，至少 50 个字符。");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      await startAdaptation(
+        { title: title.trim(), text, sourcePath: null },
+        {
+          providerId: providerId || null,
+          model: null,
+          maxEpisodes,
+          styleNotes: notes,
+          replaceExisting: replace,
+        },
+      );
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => setOpen(false)}
+      title="把整本小说改编成漫剧"
+      subtitle="章节切分 → 分块理解 → 角色合并 → 分集、场景与分镜。长篇会自动分块，Mock 模型也能离线跑通。"
+      wide
+      footer={
+        <>
+          <span className="modal__footnote">单次最多 120 个分析块；超长小说请分卷。</span>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            取消
+          </Button>
+          <Button
+            variant="primary"
+            icon={<BookOpen size={16} />}
+            loading={submitting}
+            disabled={planning || !text.trim()}
+            onClick={() => void submit()}
+          >
+            开始改编
+          </Button>
+        </>
+      }
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.md,.text"
+        hidden
+        onChange={async (event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          applyText(await file.text(), file.name);
+        }}
+      />
+      <div className="form-grid form-grid--two">
+        <Field label="小说标题">
+          <input
+            className="input"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="例如：雾港来信"
+          />
+        </Field>
+        <Field label="导入文件">
+          <Button variant="secondary" icon={<Upload size={15} />} loading={importing} onClick={() => void importNovel()}>
+            选择 TXT / MD
+          </Button>
+        </Field>
+      </div>
+      <Field label="小说正文">
+        <textarea
+          className="textarea novel-textarea"
+          rows={10}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder="粘贴完整小说。支持“第X章 / Chapter N”标题；没有标题会自动按段落切块。"
+        />
+      </Field>
+      <div className="novel-plan">
+        <span><strong>{text.trim().length.toLocaleString()}</strong> 字</span>
+        <span><strong>{planning ? "…" : plan?.chapterCount ?? 0}</strong> 章</span>
+        <span><strong>{planning ? "…" : plan?.chunkCount ?? 0}</strong> 个分析块</span>
+        <span><strong>{planning ? "…" : plan?.estimatedCalls ?? 0}</strong> 次模型调用</span>
+      </div>
+      <div className="form-grid form-grid--three">
+        <Field label="编剧模型">
+          <select className="input" value={providerId} onChange={(event) => setProviderId(event.target.value)}>
+            {llms.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="最大集数">
+          <input
+            type="number"
+            className="input"
+            min={0}
+            max={60}
+            value={maxEpisodes}
+            onChange={(event) => setMaxEpisodes(Number(event.target.value))}
+          />
+        </Field>
+        <label className="switch-row switch-row--compact switch-row--vertical">
+          <input type="checkbox" checked={replace} onChange={(event) => setReplace(event.target.checked)} />
+          <span>
+            <strong>替换现有剧本</strong>
+            <small>角色按名字复用</small>
+          </span>
+        </label>
+      </div>
+      <Field label="改编备注（可选）">
+        <textarea
+          className="textarea"
+          rows={2}
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          placeholder="例如：保留原著对白，突出雨夜氛围，每集结尾留钩子。"
+        />
+      </Field>
+      {error ? <InlineNotice tone="warn">{error}</InlineNotice> : null}
+      <InlineNotice tone="info">
+        正文会复制进当前项目；每 6,000 字左右调用一次模型，角色名与锁定特征会跨章节合并。
+      </InlineNotice>
     </Modal>
   );
 }
