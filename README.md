@@ -82,7 +82,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.3.0` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.3.0_aarch64.dmg`（SHA-256 `37b0420fea0040a80adc8cc45f2d551911646a07f51dad1fc7637099b165932c`，包含长篇小说改编、take 治理、素材导入与项目预算），校验值、安装提示与已知边界见 [docs/release-0.3.0.md](docs/release-0.3.0.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows 构建在 GitHub Actions 矩阵中，目标已通过 `cargo xwin check`，但本次会话未执行 Windows 运行时验证；没有创建公开 GitHub Release（本机未安装/登录 `gh`）。
+`v0.3.1` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.3.1_aarch64.dmg`（SHA-256 `c2ac96ffe4d490ba0f9133d580790dd6bfd55314b3daa558ccc4b98e24ecf157`），Windows x64 便携包在 `release/SaladCart_0.3.1_windows-x64-portable.zip`（SHA-256 `f25eb41aab4dd7ebec175f6d7c1b498e72c91c47d129aa79a7f9f929088f810f`）。校验值、安装提示与已知边界见 [docs/release-0.3.1.md](docs/release-0.3.1.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。Windows CI 安装包仍在构建队列中；本机未安装/登录 `gh`，未创建公开 GitHub Release。
 
 ## 产品研究
 
