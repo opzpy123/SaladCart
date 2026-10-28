@@ -81,14 +81,24 @@ jobs:
         env:
           SALADCART_FFMPEG: ${{ github.workspace }}\src-tauri\binaries\ffmpeg-${{ matrix.target_triple }}.exe
         run: cargo test --manifest-path src-tauri/Cargo.toml
-      - name: Build installers
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Add Apple signing/notarization and Windows signing secrets here before
-          # publishing production installers. The current build is unsigned.
+      - name: Build installers (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          set -o pipefail
+          pnpm tauri build ${{ matrix.args }} 2>&1 | tee build.log
+      - name: Build installers (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          pnpm tauri build 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          args: ${{ matrix.args }}
+          name: build-log-${{ matrix.artifact }}
+          path: build.log
+          if-no-files-found: ignore
       - name: Upload unsigned artifacts
         uses: actions/upload-artifact@v4
         with:

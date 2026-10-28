@@ -84,6 +84,10 @@ jobs:
             mkdir -p ci/installers
             cp ci-payload/installers/* ci/installers/
           fi
+          for log in $(find ci-payload/artifacts -name build.log 2>/dev/null); do
+            name=$(basename "$(dirname "$log")")
+            cp "$log" "ci/payload-build-${name}.log"
+          done
           git add ci
           git commit -m "ci: report run ${RUN_ID} [skip ci]"
           git push origin "HEAD:refs/heads/ci-status-${RUN_ID}"
