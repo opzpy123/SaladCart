@@ -13,7 +13,7 @@ import {
   Terminal,
   X,
 } from "lucide-react";
-import { formatError, invoke } from "@/lib/bridge";
+import { formatError, invoke, pickDirectory } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
 import type { ProviderProfile, ProviderTestResult } from "@/lib/types";
 import {
@@ -47,6 +47,7 @@ export function SettingsScreen() {
   const [kind, setKind] = useState<Kind>("llm");
   const [defaults, setDefaults] = useState({ llm: "", image: "", video: "", concurrency: 2 });
   const [ffmpegPath, setFfmpegPath] = useState("");
+  const [exportDir, setExportDir] = useState("");
   const [budgetCap, setBudgetCap] = useState("");
   const [trendUrl, setTrendUrl] = useState("");
   const [trendToken, setTrendToken] = useState("");
@@ -66,6 +67,7 @@ export function SettingsScreen() {
       concurrency: settings.concurrency,
     });
     setFfmpegPath(settings.ffmpegPath ?? system?.ffmpegPath ?? "");
+    setExportDir(settings.exportDir ?? "");
     setTrendUrl(settings.trendSourceUrl ?? "");
   }, [settings, system?.ffmpegPath]);
 
@@ -105,6 +107,29 @@ export function SettingsScreen() {
     await refreshSettings();
     setSaving(false);
     pushToast("success", "FFmpeg 路径已更新");
+  };
+
+  const chooseExportDir = async () => {
+    const selected = await pickDirectory("选择视频导出文件夹");
+    if (selected) setExportDir(selected);
+  };
+
+  const saveExportDir = async () => {
+    setSaving(true);
+    await updatePreferences({
+      exportDir: exportDir.trim(),
+      clearExportDir: !exportDir.trim(),
+    });
+    setSaving(false);
+    pushToast("success", "导出路径已保存");
+  };
+
+  const resetExportDir = async () => {
+    setSaving(true);
+    setExportDir("");
+    await updatePreferences({ clearExportDir: true });
+    setSaving(false);
+    pushToast("success", "已恢复默认：桌面");
   };
 
   const saveTrendSource = async (clearToken = false) => {
@@ -366,6 +391,41 @@ export function SettingsScreen() {
                 未安装时仍可使用 Mock 图片和剧本，但无法生成视频或导出。
               </InlineNotice>
             ) : null}
+          </section>
+
+          <section className="panel settings-section">
+            <SectionHeader
+              title="视频导出"
+              subtitle="默认导出到桌面，也可以固定到某个文件夹；设置立即作用于下一次渲染。"
+            />
+            <div className="settings-form-grid">
+              <Field label="导出文件夹" hint="留空使用桌面；也可以手写 ~/Movies 这样的路径">
+                <input
+                  className="input input--mono"
+                  value={exportDir}
+                  onChange={(event) => setExportDir(event.target.value)}
+                  placeholder="~/Desktop 或 /Users/you/Movies"
+                />
+              </Field>
+            </div>
+            <div className="ffmpeg-form">
+              <Button variant="secondary" icon={<FolderOpen size={14} />} onClick={() => void chooseExportDir()}>
+                选择文件夹
+              </Button>
+              <Button variant="secondary" loading={saving} onClick={() => void saveExportDir()}>
+                保存路径
+              </Button>
+              <Button variant="ghost" onClick={() => void resetExportDir()}>
+                恢复默认（桌面）
+              </Button>
+            </div>
+            <div className="storage-card">
+              <FolderOpen size={20} />
+              <div>
+                <strong>{exportDir.trim() || "桌面（默认）"}</strong>
+                <small>之后的 MP4 导出将写入此文件夹</small>
+              </div>
+            </div>
           </section>
 
           <section className="panel settings-section">

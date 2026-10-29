@@ -377,6 +377,8 @@ pub struct Settings {
     pub concurrency: u32,
     pub ffmpeg_path: Option<String>,
     pub storage_dir: Option<String>,
+    #[serde(default)]
+    pub export_dir: Option<String>,
     pub ui_language: String,
     #[serde(default)]
     pub keychain_available: Option<bool>,

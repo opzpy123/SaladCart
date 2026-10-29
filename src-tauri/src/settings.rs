@@ -324,6 +324,7 @@ pub fn default_settings() -> Settings {
         concurrency: 2,
         ffmpeg_path: None,
         storage_dir: None,
+        export_dir: None,
         ui_language: "zh-CN".into(),
         keychain_available: None,
         trend_source_url: None,

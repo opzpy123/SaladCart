@@ -432,6 +432,8 @@ pub struct PreferencesPatch {
     pub concurrency: Option<u32>,
     pub ffmpeg_path: Option<String>,
     pub clear_ffmpeg_path: bool,
+    pub export_dir: Option<String>,
+    pub clear_export_dir: bool,
     pub ui_language: Option<String>,
 }
 
@@ -495,6 +497,34 @@ pub fn update_preferences(
     state: State<'_, AppState>,
     patch: PreferencesPatch,
 ) -> AppResult<Settings> {
+    let normalized_export = if patch.clear_export_dir {
+        Some(None)
+    } else {
+        patch
+            .export_dir
+            .as_deref()
+            .map(|dir| {
+                let trimmed = dir.trim();
+                if trimmed.is_empty() {
+                    return Ok(None);
+                }
+                let path = crate::paths::expand_home(trimmed);
+                if path.exists() && !path.is_dir() {
+                    return Err(AppError::Invalid(format!(
+                        "导出路径不是文件夹：{}",
+                        path.display()
+                    )));
+                }
+                std::fs::create_dir_all(&path).map_err(|error| {
+                    AppError::Message(format!(
+                        "无法创建导出目录 {}：{error}",
+                        path.display()
+                    ))
+                })?;
+                Ok(Some(path.to_string_lossy().to_string()))
+            })
+            .transpose()?
+    };
     let next = settings::update_persisted(&state.paths, |settings| {
         if let Some(defaults) = patch.defaults {
             settings.defaults = defaults;
@@ -510,6 +540,9 @@ pub fn update_preferences(
             } else {
                 Some(path.trim().to_string())
             };
+        }
+        if let Some(export_dir) = normalized_export {
+            settings.export_dir = export_dir;
         }
         if let Some(language) = patch.ui_language {
             settings.ui_language = language;

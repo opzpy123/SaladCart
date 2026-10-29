@@ -6,8 +6,14 @@ use crate::settings;
 use crate::store::ProjectStore;
 
 pub async fn run(paths: &AppPaths) -> AppResult<String> {
-    let settings = settings::default_settings();
+    let mut settings = settings::default_settings();
     let snapshot = demo::create(paths, &settings).await?;
+    settings.export_dir = Some(
+        paths
+            .exports_dir(&snapshot.project.id)?
+            .to_string_lossy()
+            .to_string(),
+    );
     let mut store = ProjectStore::open(paths, &snapshot.project.id)?;
     let timeline = store.auto_assemble(false)?;
     if timeline.clips.is_empty() {

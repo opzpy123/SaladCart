@@ -40,6 +40,13 @@ export async function pickNovelFile(): Promise<string | null> {
   return typeof selected === "string" ? selected : null;
 }
 
+export async function pickDirectory(title: string): Promise<string | null> {
+  if (!isTauri) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({ directory: true, multiple: false, title });
+  return typeof selected === "string" ? selected : null;
+}
+
 export async function invoke<T>(
   command: string,
   args: Record<string, unknown> = {},

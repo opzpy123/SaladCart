@@ -412,8 +412,12 @@ impl Ffmpeg {
         } else {
             "DejaVu Sans"
         };
-        let font_size = (plan.height as f64 * 0.042).max(20.0) as i64;
-        let margin_v = (plan.height as f64 * 0.075).max(24.0) as i64;
+        // libass lays SRT out on a 288-line play resolution and scales
+        // FontSize/MarginV by video_height / 288. Compute the style in those
+        // units so 4.2% / 7.5% of the frame stays consistent at every size.
+        let ass_play_res_y: f64 = 288.0;
+        let font_size = ((ass_play_res_y * 0.042).round() as i64).max(10);
+        let margin_v = ((ass_play_res_y * 0.075).round() as i64).max(10);
         if let Some(srt) = &plan.subtitles {
             let escaped = escape_filter_path(Path::new(srt));
             filters.push(format!(
@@ -606,7 +610,20 @@ pub fn build_render_plan(
     } else {
         format!("{file}.mp4")
     };
-    let output = store.paths.exports_dir(&store.project_id)?.join(file);
+    let export_dir = settings
+        .export_dir
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(crate::paths::expand_home)
+        .unwrap_or_else(crate::paths::default_export_dir);
+    std::fs::create_dir_all(&export_dir).map_err(|error| {
+        AppError::Message(format!(
+            "无法创建导出目录 {}：{error}",
+            export_dir.display()
+        ))
+    })?;
+    let output = export_dir.join(file);
     let subtitles = if options.burn_subtitles && !timeline.subtitles.is_empty() {
         let path = store.write_srt()?;
         Some(path.to_string_lossy().to_string())

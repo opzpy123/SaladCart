@@ -325,6 +325,7 @@ export interface Settings {
   concurrency: number;
   ffmpegPath: string | null;
   storageDir: string | null;
+  exportDir?: string | null;
   uiLanguage: string;
   keychainAvailable?: boolean | null;
   trendSourceUrl?: string | null;
@@ -615,6 +616,8 @@ export interface PreferencesPatch {
   concurrency?: number;
   ffmpegPath?: string;
   clearFfmpegPath?: boolean;
+  exportDir?: string;
+  clearExportDir?: boolean;
   uiLanguage?: string;
 }
 

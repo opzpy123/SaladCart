@@ -69,3 +69,19 @@ impl AppPaths {
         Ok(base.join(safe))
     }
 }
+
+pub fn default_export_dir() -> PathBuf {
+    dirs::desktop_dir()
+        .or_else(dirs::home_dir)
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+pub fn expand_home(input: &str) -> PathBuf {
+    let path = PathBuf::from(input.trim());
+    if let Ok(rest) = path.strip_prefix("~") {
+        if let Some(home) = dirs::home_dir() {
+            return home.join(rest);
+        }
+    }
+    path
+}
