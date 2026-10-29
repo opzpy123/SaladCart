@@ -27,6 +27,15 @@ pub fn endpoint(profile: &ProviderProfile, path: &str) -> String {
     format!("{}/{}", base(profile), path.trim_start_matches('/'))
 }
 
+pub fn ark_error(status: reqwest::StatusCode, body: &str) -> AppError {
+    if body.contains("not activated") || body.contains("activate the model") {
+        return AppError::Provider(
+            "火山方舟模型未开通：请到 Ark 控制台开通对应模型后重试".into(),
+        );
+    }
+    error_from_response(status, body)
+}
+
 pub fn error_from_response(status: reqwest::StatusCode, body: &str) -> AppError {
     let message = serde_json::from_str::<serde_json::Value>(body)
         .ok()

@@ -568,7 +568,7 @@ async fn ark(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        return Err(providers::error_from_response(status, &body));
+        return Err(providers::ark_error(status, &body));
     }
     let value: Value = response.json().await?;
     let data = value

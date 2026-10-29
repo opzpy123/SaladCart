@@ -963,7 +963,7 @@ async fn ark_submit(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        return Err(providers::error_from_response(status, &body));
+        return Err(providers::ark_error(status, &body));
     }
     let raw: Value = response.json().await?;
     let id = first_str(&raw, &["/id", "/task_id", "/data/id"])

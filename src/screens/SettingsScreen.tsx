@@ -426,7 +426,9 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
         {!local ? (
           <div className="provider-card__key">
             <div className="provider-card__key-head">
-              <span><KeyRound size={13} /> API Key</span>
+              <span>
+                <KeyRound size={13} /> {provider.id === "volc-music" ? "AccessKey:SecretKey" : "API Key"}
+              </span>
               {provider.apiKeySet ? (
                 <em className="key-state key-state--set"><Check size={11} /> 已存入钥匙串</em>
               ) : (
@@ -439,7 +441,15 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
                 type="password"
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
-                placeholder={provider.apiKeySet ? "••••••••  输入新 Key 可替换" : provider.id === "kling-video" ? "API Key 或 AccessKey:SecretKey" : provider.envVar || "粘贴 API Key"}
+                placeholder={
+                  provider.apiKeySet
+                    ? "••••••••  输入新 Key 可替换"
+                    : provider.id === "volc-music"
+                      ? "AccessKey:SecretKey（IAM 访问密钥，不是方舟 API Key）"
+                      : provider.id === "kling-video"
+                        ? "API Key 或 AccessKey:SecretKey"
+                        : provider.envVar || "粘贴 API Key"
+                }
               />
               <Button size="sm" variant="secondary" loading={savingKey} onClick={saveKey} disabled={!secret.trim()}>
                 保存
