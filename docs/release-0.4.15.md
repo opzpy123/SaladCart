@@ -28,11 +28,10 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
 - `cargo test` — **37 automated tests passed**, 3 ignored/manual; `pnpm test` 10/10.
 - `pnpm tauri build` passed; DMG mounted and packaged `--selftest` passed (19 s export,
   423,595 bytes MP4).
-- The 0.4.15 tag run must show the `release` job green; 0.4.14 already proved the
+- The 0.4.15 tag run [`40841915463`](https://github.com/opzpy123/SaladCart/actions/runs/40841915463)
+  completed all three platform builds and the `release` job successfully; the draft
+  GitHub release was created with the dmg/msi/exe attachments. 0.4.14 already proved the
   Windows and macOS build jobs, bundled-FFmpeg checks, TTS smoke and packaged selftest.
-- As of the last check, the 0.4.15 Windows job passed (including packaged selftest);
-  macOS arm64 was still queued behind the Intel build, so the draft-release step had not
-  run yet.
 
 ## Remaining setup
 
