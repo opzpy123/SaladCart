@@ -137,4 +137,8 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
-          files: artifacts/**/*
+          fail_on_unmatched_files: false
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.msi
+            artifacts/**/*.exe
