@@ -326,6 +326,7 @@ export interface Settings {
   ffmpegPath: string | null;
   storageDir: string | null;
   uiLanguage: string;
+  keychainAvailable?: boolean | null;
 }
 
 export interface ContextAssetRef {

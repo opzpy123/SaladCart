@@ -54,6 +54,10 @@ pub fn get_secret(provider_id: &str) -> AppResult<String> {
     })
 }
 
+pub fn probe_keychain() -> bool {
+    read_with_timeout("__saladcart_probe__", QUERY_TIMEOUT).is_ok()
+}
+
 pub fn has_secret(provider_id: &str) -> AppResult<bool> {
     // A locked or unresponsive Keychain must not block startup forever.
     match read_with_timeout(provider_id, QUERY_TIMEOUT) {

@@ -325,6 +325,7 @@ pub fn default_settings() -> Settings {
         ffmpeg_path: None,
         storage_dir: None,
         ui_language: "zh-CN".into(),
+        keychain_available: None,
     }
 }
 
@@ -345,8 +346,11 @@ pub fn load(paths: &AppPaths) -> Settings {
             settings.providers.push(builtin);
         }
     }
+    let keychain_available = secrets::probe_keychain();
+    settings.keychain_available = Some(keychain_available);
     for provider in &mut settings.providers {
-        provider.api_key_set = provider.enabled && secret_available(provider);
+        provider.api_key_set =
+            provider.enabled && secret_available(provider, keychain_available);
     }
     settings
 }
@@ -361,14 +365,14 @@ pub fn save(paths: &AppPaths, settings: &Settings) -> AppResult<()> {
     Ok(())
 }
 
-fn secret_available(provider: &crate::models::ProviderProfile) -> bool {
+fn secret_available(provider: &crate::models::ProviderProfile, keychain_available: bool) -> bool {
     let local = provider.id.starts_with("mock-")
         || provider.vendor == "ollama"
         || provider.id == "comfyui-image";
     if local {
         return false;
     }
-    secrets::has_secret(&provider.id).unwrap_or(false)
+    (keychain_available && secrets::has_secret(&provider.id).unwrap_or(false))
         || (!provider.env_var.is_empty() && std::env::var(&provider.env_var).is_ok())
 }
 

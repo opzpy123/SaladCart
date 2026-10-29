@@ -166,6 +166,15 @@ export function SettingsScreen() {
                 />
               }
             />
+            {settings.keychainAvailable === false ? (
+              <InlineNotice tone="warn">
+                系统钥匙串当前不可用，API Key 暂时无法读取（通常是因为 Mac 已锁定）。解锁后点
+                <button className="linklike" type="button" onClick={() => void refreshSettings()}>
+                  重新读取
+                </button>
+                ，再进行生成。
+              </InlineNotice>
+            ) : null}
             <div className="provider-list">
               {providers.map((provider) => (
                 <ProviderCard key={provider.id} provider={provider} />

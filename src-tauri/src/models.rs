@@ -378,6 +378,8 @@ pub struct Settings {
     pub ffmpeg_path: Option<String>,
     pub storage_dir: Option<String>,
     pub ui_language: String,
+    #[serde(default)]
+    pub keychain_available: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

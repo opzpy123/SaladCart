@@ -5482,6 +5482,17 @@ body {
   color: var(--good-ink);
 }
 
+.linklike {
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 3px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .sidebar__foot {
   color: #a8a8af;
   font-size: 10px;
