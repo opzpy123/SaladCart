@@ -47,6 +47,18 @@ export function ProjectDashboard() {
     : latest;
   const counts = activeSummary?.counts;
   const cover = activeSummary?.coverPath;
+  const nextCharacter = snapshot?.characters[0] ?? null;
+  const nextShot =
+    snapshot?.episodes
+      .flatMap((episode) => episode.scenes)
+      .flatMap((scene) => scene.shots)
+      .find((shot) => shot.status !== "ready") ??
+    snapshot?.episodes[0]?.scenes[0]?.shots[0] ??
+    null;
+  const defaultLlm = settings?.providers.find((provider) => provider.id === settings.defaults.llm);
+  const referenceCount = nextCharacter
+    ? Number(Boolean(nextCharacter.referenceAssetId)) + Number(Boolean(nextCharacter.sheetAssetId))
+    : 0;
 
   return (
     <div className="dashboard">
@@ -122,18 +134,35 @@ export function ProjectDashboard() {
             <div className="hero-context-card__head">
               <Sparkles size={14} />
               <span>下一次生成</span>
-              <em>已锁定</em>
+              <em>{nextCharacter?.lockedTraits.length ? "已锁定" : nextCharacter ? "待设定" : "待添加"}</em>
             </div>
-            <p>沈知遥 · 黑色及肩短发 / 银灰挑染 / 深灰风衣</p>
+            <p>
+              {nextCharacter
+                ? `${nextCharacter.name} · ${
+                    nextCharacter.lockedTraits.slice(0, 3).join(" / ") || nextCharacter.role
+                  }`
+                : "打开或新建项目后，这里会显示角色锁定与连续性"}
+            </p>
             <div className="hero-context-card__row">
-              <span>角色参考 × 2</span>
-              <span>尾帧续接</span>
-              <span>9:16 · 5s</span>
+              <span>{nextCharacter ? `角色参考 × ${referenceCount}` : "暂无角色"}</span>
+              <span>{nextShot?.continuityFromShotId ? "尾帧续接" : "新镜头"}</span>
+              <span>
+                {snapshot?.project.aspectRatio ?? "9:16"} ·{" "}
+                {nextShot ? Math.max(1, Math.round(nextShot.durationMs / 1000)) : 5}s
+              </span>
             </div>
             <div className="hero-context-card__cost">
-              <span>预估</span>
-              <strong>¥0.00</strong>
-              <em>MOCK</em>
+              <span>默认编剧</span>
+              <strong>{defaultLlm?.label ?? "未配置"}</strong>
+              <em>
+                {defaultLlm
+                  ? defaultLlm.id.startsWith("mock-")
+                    ? "OFFLINE"
+                    : defaultLlm.apiKeySet
+                      ? "READY"
+                      : "NO KEY"
+                  : "—"}
+              </em>
             </div>
           </div>
         </div>

@@ -48,6 +48,7 @@ pub fn enqueue_script(
             profile.label
         )));
     }
+    settings::ensure_ready(&profile)?;
     let model = request
         .model
         .clone()
@@ -159,6 +160,8 @@ pub fn enqueue_generation(
     let settings = state.settings();
     let store = ProjectStore::open(&state.paths, project_id)?;
     let compiled = context::compile(&store, &settings, &request)?;
+    let profile = settings::find_provider(&settings, &compiled.provider_id)?;
+    settings::ensure_ready(profile)?;
     store.ensure_budget(compiled.estimated_cost)?;
     let summary = format!("{} · {}", compiled.title, compiled.provider_label);
     let mut request = request;
@@ -233,10 +236,11 @@ pub fn enqueue_music(
     }
     if profile.id == "jamendo-music" {
         return Err(AppError::Invalid(
-            "Jamendo is for searching licensed music, not generating it. Choose Mock, Stability or ElevenLabs."
+            "Jamendo is for searching licensed music, not generating it. Choose Mock, Stability, ElevenLabs or Volcengine."
                 .into(),
         ));
     }
+    settings::ensure_ready(&profile)?;
     let model = request
         .model
         .clone()

@@ -6,7 +6,7 @@ use saladcart_lib::providers::image::{self, ImageRequest};
 use saladcart_lib::providers::video::{self, VideoRequest};
 use saladcart_lib::services::novel;
 use serde_json::json;
-use wiremock::matchers::{header, method, path};
+use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 fn profile(id: &str, kind: &str, api_base: String, model: &str) -> ProviderProfile {
@@ -118,6 +118,160 @@ async fn kling_video_contract_submits_and_polls() {
         done.output_url.as_deref(),
         Some("https://cdn.example/v.mp4")
     );
+}
+
+#[tokio::test]
+async fn ark_image_contract_posts_seedream_and_downloads_url() {
+    let server = MockServer::start().await;
+    let image_url = format!("{}/x.png", server.uri());
+    Mock::given(method("POST"))
+        .and(path("/images/generations"))
+        .and(header("authorization", "Bearer test-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "data": [{"url": image_url}]
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/x.png"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(b"\x89PNG\r\n\x1a\n"))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let provider = profile("ark-image", "image", server.uri(), "doubao-seedream-5-0-flash-260915");
+    let result = image::generate(
+        &provider,
+        Some("test-key"),
+        &ImageRequest {
+            model: "doubao-seedream-5-0-flash-260915".into(),
+            prompt: "rainy rooftop".into(),
+            negative_prompt: "text".into(),
+            aspect_ratio: "9:16".into(),
+            width: 1080,
+            height: 1920,
+            count: 1,
+            seed: Some(7),
+            references: vec![],
+            title: "contract".into(),
+        },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.extension, "png");
+    assert_eq!(result.bytes, b"\x89PNG\r\n\x1a\n");
+}
+
+#[tokio::test]
+async fn ark_video_contract_submits_and_polls() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/contents/generations/tasks"))
+        .and(header("authorization", "Bearer test-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "cgt-1",
+            "status": "queued"
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/contents/generations/tasks/cgt-1"))
+        .and(header("authorization", "Bearer test-key"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "cgt-1",
+            "status": "succeeded",
+            "content": {"video_url": "https://cdn.example/ark.mp4"}
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let provider = profile("ark-video", "video", server.uri(), "doubao-seedance-2-0-mini-260615");
+    let request = VideoRequest {
+        model: "doubao-seedance-2-0-mini-260615".into(),
+        prompt: "rain".into(),
+        negative_prompt: String::new(),
+        aspect_ratio: "9:16".into(),
+        duration_ms: 5_000,
+        seed: None,
+        resolution: None,
+        start_frame: None,
+        references: vec![],
+        title: "contract".into(),
+    };
+    let task = video::submit(&provider, Some("test-key"), &request)
+        .await
+        .unwrap();
+    assert_eq!(task.id, "cgt-1");
+    assert_eq!(task.status, "pending");
+
+    let done = video::poll(&provider, Some("test-key"), &task)
+        .await
+        .unwrap();
+    assert_eq!(done.status, "succeeded");
+    assert_eq!(
+        done.output_url.as_deref(),
+        Some("https://cdn.example/ark.mp4")
+    );
+}
+
+#[tokio::test]
+async fn volcengine_music_contract_signs_submits_and_polls() {
+    let server = MockServer::start().await;
+    let audio_url = format!("{}/music.mp3", server.uri());
+    Mock::given(method("POST"))
+        .and(path("/"))
+        .and(query_param("Action", "GenBGM"))
+        .and(query_param("Version", "2024-08-12"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "TaskId": "bgm-1",
+            "Status": "Processing"
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/"))
+        .and(query_param("Action", "QueryTask"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "TaskId": "bgm-1",
+            "Status": "Success",
+            "ResultUrl": audio_url
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/music.mp3"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "audio/mpeg")
+                .set_body_bytes(b"ID3"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let provider = profile("volc-music", "music", server.uri(), "v5.0");
+    let result = saladcart_lib::providers::music::generate(
+        &provider,
+        Some("ak:sk"),
+        &saladcart_lib::providers::music::MusicRequest {
+            model: "v5.0".into(),
+            prompt: "warm night market, guzheng and synth".into(),
+            duration_ms: 30_000,
+            instrumental: true,
+            seed: None,
+        },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(result.extension, "mp3");
+    assert_eq!(result.bytes, b"ID3");
 }
 
 #[tokio::test]

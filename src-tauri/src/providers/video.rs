@@ -44,6 +44,7 @@ pub async fn submit(
         "veo-video" => veo_submit(profile, require(secret, profile)?, request).await,
         "replicate-video" => replicate_submit(profile, require(secret, profile)?, request).await,
         "fal-video" => fal_submit(profile, require(secret, profile)?, request).await,
+        "ark-video" => ark_submit(profile, require(secret, profile)?, request).await,
         other => Err(AppError::Provider(format!(
             "video adapter not implemented for {other}"
         ))),
@@ -63,6 +64,7 @@ pub async fn poll(
         "veo-video" => veo_poll(profile, require(secret, profile)?, task).await,
         "replicate-video" => replicate_poll(profile, require(secret, profile)?, task).await,
         "fal-video" => fal_poll(profile, require(secret, profile)?, task).await,
+        "ark-video" => ark_poll(profile, require(secret, profile)?, task).await,
         other => Err(AppError::Provider(format!(
             "video adapter not implemented for {other}"
         ))),
@@ -914,6 +916,108 @@ async fn fal_poll(
         error: first_str(&raw, &["/detail", "/error"]),
         raw,
     })
+}
+
+async fn ark_submit(
+    profile: &ProviderProfile,
+    secret: &str,
+    request: &VideoRequest,
+) -> AppResult<VideoTask> {
+    let client = providers::client()?;
+    let mut content = vec![json!({
+        "type": "text",
+        "text": prompt_with_negative(request)
+    })];
+    if let Some(frame) = &request.start_frame {
+        content.push(json!({
+            "type": "image_url",
+            "image_url": {"url": providers::data_uri(frame)?}
+        }));
+    }
+    for reference in request.references.iter().take(3) {
+        content.push(json!({
+            "type": "image_url",
+            "image_url": {"url": providers::data_uri(reference)?}
+        }));
+    }
+    let duration = if seconds(request) <= 5 { 5 } else { 10 };
+    let mut body = json!({
+        "model": request.model,
+        "content": content,
+        "ratio": request.aspect_ratio,
+        "duration": duration,
+        "watermark": false
+    });
+    if let Some(seed) = request.seed {
+        body["seed"] = json!(seed);
+    }
+    if let Some(resolution) = &request.resolution {
+        body["resolution"] = json!(resolution);
+    }
+    let response = client
+        .post(providers::endpoint(profile, "contents/generations/tasks"))
+        .bearer_auth(secret)
+        .json(&body)
+        .send()
+        .await?;
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(providers::error_from_response(status, &body));
+    }
+    let raw: Value = response.json().await?;
+    let id = first_str(&raw, &["/id", "/task_id", "/data/id"])
+        .ok_or_else(|| AppError::Provider("Ark Seedance returned no task id".into()))?;
+    Ok(VideoTask {
+        id,
+        kind: "generation".into(),
+        status: first_status(&raw),
+        output_url: ark_output(&raw),
+        error: None,
+        raw,
+    })
+}
+
+async fn ark_poll(
+    profile: &ProviderProfile,
+    secret: &str,
+    task: &VideoTask,
+) -> AppResult<VideoTask> {
+    let client = providers::client()?;
+    let response = client
+        .get(providers::endpoint(
+            profile,
+            &format!("contents/generations/tasks/{}", task.id),
+        ))
+        .bearer_auth(secret)
+        .send()
+        .await?;
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(providers::error_from_response(status, &body));
+    }
+    let raw: Value = response.json().await?;
+    Ok(VideoTask {
+        id: task.id.clone(),
+        kind: task.kind.clone(),
+        status: first_status(&raw),
+        output_url: ark_output(&raw),
+        error: first_str(&raw, &["/error/message", "/error/code", "/error", "/message"]),
+        raw,
+    })
+}
+
+fn ark_output(raw: &Value) -> Option<String> {
+    first_str(
+        raw,
+        &[
+            "/content/video_url",
+            "/video_url",
+            "/output/video_url",
+            "/data/video_url",
+        ],
+    )
 }
 
 pub async fn poll_delay(profile: &ProviderProfile) {

@@ -121,6 +121,18 @@ pub fn default_settings() -> Settings {
             "FAL_KEY",
             vec!["fal-ai/flux/schnell", "fal-ai/nano-banana"],
         ),
+        (
+            "ark-image",
+            "火山方舟 Seedream",
+            "https://ark.cn-beijing.volces.com/api/v3",
+            "doubao-seedream-5-0-flash-260915",
+            "ARK_API_KEY",
+            vec![
+                "doubao-seedream-5-0-flash-260915",
+                "doubao-seedream-5-0-pro-260628",
+                "doubao-seedream-5-0-260128",
+            ],
+        ),
     ] {
         providers.push(crate::models::ProviderProfile {
             id: id.into(),
@@ -214,6 +226,14 @@ pub fn default_settings() -> Settings {
             "FAL_KEY",
             (vec!["9:16", "16:9", "1:1"], vec![5, 10], true, true),
         ),
+        (
+            "ark-video",
+            "火山方舟 Seedance",
+            "https://ark.cn-beijing.volces.com/api/v3",
+            "doubao-seedance-2-0-mini-260615",
+            "ARK_API_KEY",
+            (vec!["9:16", "16:9", "1:1"], vec![5, 10], true, true),
+        ),
     ] {
         providers.push(crate::models::ProviderProfile {
             id: id.into(),
@@ -268,6 +288,13 @@ pub fn default_settings() -> Settings {
             "https://api.elevenlabs.io",
             "music",
             "ELEVENLABS_API_KEY",
+        ),
+        (
+            "volc-music",
+            "火山引擎 纯音乐",
+            "https://open.volcengineapi.com",
+            "v5.0",
+            "VOLC_ACCESSKEY_SECRET",
         ),
     ] {
         providers.push(crate::models::ProviderProfile {
@@ -337,6 +364,16 @@ pub fn save(paths: &AppPaths, settings: &Settings) -> AppResult<()> {
 fn secret_available(provider: &crate::models::ProviderProfile) -> bool {
     secrets::has_secret(&provider.id).unwrap_or(false)
         || (!provider.env_var.is_empty() && std::env::var(&provider.env_var).is_ok())
+}
+
+pub fn ensure_ready(provider: &crate::models::ProviderProfile) -> AppResult<()> {
+    if provider.id.starts_with("mock-")
+        || provider.vendor == "ollama"
+        || provider.id == "comfyui-image"
+    {
+        return Ok(());
+    }
+    resolve_secret(provider).map(|_| ())
 }
 
 pub fn resolve_secret(provider: &crate::models::ProviderProfile) -> AppResult<String> {

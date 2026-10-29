@@ -44,8 +44,8 @@ pnpm seed:demo      # 向本机工作区注入一部完整演示项目（剧本/
 | 能力 | 适配器 |
 | --- | --- |
 | 编剧 / LLM | Mock、任意 OpenAI 兼容接口（OpenAI、DeepSeek、Qwen/DashScope、Ollama） |
-| 文生图 / 角色参考 | Mock、OpenAI Images、Gemini / Imagen、Replicate、ComfyUI |
-| 视频 | Mock（本地 FFmpeg）、Kling、Runway、Luma、MiniMax、Veo、Replicate、fal.ai |
+| 文生图 / 角色参考 | Mock、OpenAI Images、Gemini / Imagen、Replicate、ComfyUI、Stability、fal.ai、火山方舟 Seedream |
+| 视频 | Mock（本地 FFmpeg）、Kling、Runway、Luma、MiniMax、Veo、Replicate、fal.ai、火山方舟 Seedance |
 | 音乐 | Mock（本地合成 100 BPM）、Stability Audio、ElevenLabs Music；Jamendo 正版曲库搜索 |
 
 密钥只存在 macOS Keychain / Windows Credential Manager，不进入项目、日志或渲染层。详细配置与已知接口差异见 [docs/provider-setup.md](docs/provider-setup.md)。

@@ -4,6 +4,7 @@ import { Button, Field, InlineNotice, Modal } from "./ui";
 import { formatError, invoke, isDesktop, pickNovelFile } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
 import type { GenerateScriptRequest, NovelPlan } from "@/lib/types";
+import { enabledProviders, preferredProviderId } from "@/lib/providers";
 
 const STYLE_PRESETS = [
   {
@@ -52,6 +53,7 @@ export function NewProjectDialog() {
   const [episodes, setEpisodes] = useState(1);
   const [style, setStyle] = useState("anime-cel");
   const [generateAfter, setGenerateAfter] = useState(true);
+  const [providerId, setProviderId] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -64,9 +66,16 @@ export function NewProjectDialog() {
       setEpisodes(1);
       setStyle("anime-cel");
       setGenerateAfter(true);
+      setProviderId(
+        preferredProviderId(
+          settings?.providers ?? [],
+          "llm",
+          settings?.defaults.llm ?? "mock-llm",
+        ),
+      );
       setError("");
     }
-  }, [open]);
+  }, [open, settings]);
 
   const submit = async () => {
     if (!premise.trim()) {
@@ -87,10 +96,12 @@ export function NewProjectDialog() {
       },
       generateAfter,
       episodes,
+      providerId,
     );
   };
 
-  const llm = settings?.providers.find((p) => p.id === settings.defaults.llm);
+  const llms = enabledProviders(settings?.providers ?? [], "llm");
+  const llm = llms.find((p) => p.id === providerId);
   return (
     <Modal
       open={open}
@@ -158,6 +169,24 @@ export function NewProjectDialog() {
               />
             </Field>
           </div>
+          <Field
+            label="编剧模型"
+            hint={generateAfter ? "选择实际执行生成的模型；已配置 Key 的真实模型优先于 Mock" : "仅创建空项目"}
+          >
+            <select
+              className="input"
+              value={providerId}
+              disabled={!generateAfter || llms.length === 0}
+              onChange={(event) => setProviderId(event.target.value)}
+            >
+              {llms.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.label}
+                  {provider.id.startsWith("mock-") ? " · 离线" : provider.apiKeySet ? " · 已配置 Key" : ""}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="交付画幅">
             <div className="aspect-picker">
               {ASPECTS.map((item) => (
@@ -182,7 +211,17 @@ export function NewProjectDialog() {
             />
             <span>
               <strong>创建后立即生成剧本与分镜</strong>
-              <small>Mock 编剧无需 API Key，可立即跑通全流程</small>
+              <small>
+                {llm
+                  ? `当前使用 ${llm.label}${
+                      llm.id.startsWith("mock-")
+                        ? "（离线，无需 Key）"
+                        : llm.apiKeySet
+                          ? "（已配置 Key）"
+                          : "（未配置 Key）"
+                    }`
+                  : "未找到可用编剧模型"}
+              </small>
             </span>
           </label>
         </div>
@@ -247,11 +286,17 @@ export function GenerateScriptDialog() {
     setShots(3);
     setNotes("");
     setReplace(snapshot.episodes.length > 0);
-    setProviderId(settings?.defaults.llm ?? "");
+    setProviderId(
+      preferredProviderId(
+        settings?.providers ?? [],
+        "llm",
+        settings?.defaults.llm ?? "mock-llm",
+      ),
+    );
   }, [open, snapshot, settings]);
 
   if (!snapshot) return null;
-  const llms = settings?.providers.filter((p) => p.kind === "llm") ?? [];
+  const llms = enabledProviders(settings?.providers ?? [], "llm");
   const hasContent = snapshot.episodes.length > 0;
 
   const submit = async () => {

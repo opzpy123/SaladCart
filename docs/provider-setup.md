@@ -29,6 +29,7 @@ Qwen keys are region-bound. If a compatible endpoint rejects `response_format`, 
 | ComfyUI | Local `/prompt` + `/history` + `/view`; expects an API-format workflow. Custom workflows can use `{{PROMPT}}`, `{{NEGATIVE}}`, `{{SEED}}`, `{{WIDTH}}`, `{{HEIGHT}}`, `{{REF_IMAGE}}`. |
 | Stability | Stable Image API with `Accept: image/*`; text prompt + aspect ratio. Reference images are not passed by this basic adapter. |
 | fal.ai | Queue API; text prompt + aspect ratio; polls status/response URLs. |
+| 火山方舟 Seedream | `https://ark.cn-beijing.volces.com/api/v3` + `POST /images/generations`; Bearer `ARK_API_KEY`. Default `doubao-seedream-5-0-flash-260915`; references are sent as data URIs; accepts `url` or `b64_json` responses. |
 
 ## Video
 
@@ -42,6 +43,7 @@ Qwen keys are region-bound. If a compatible endpoint rejects `response_format`, 
 | Veo | `https://generativelanguage.googleapis.com/v1beta` | Long-running operation polling. Download uses the Gemini key. Preview model names change; edit the default model in Settings. |
 | Replicate | `https://api.replicate.com/v1` | Model-specific input field for the start frame (`start_image`, `first_frame_image`, `image`, detected from the model name). |
 | fal.ai | `https://queue.fal.run` | Queue submit → status → response. `Authorization: Key <FAL_KEY>`. |
+| 火山方舟 Seedance | `https://ark.cn-beijing.volces.com/api/v3` | `POST /contents/generations/tasks`, poll `GET /contents/generations/tasks/{id}`; Bearer `ARK_API_KEY`. Default `doubao-seedance-2-0-mini-260615`; content uses `text` + `image_url` (start frame/reference), plus `ratio`, `duration`, `seed`. |
 
 Remote video APIs change often. Every adapter surfaces provider error bodies and stores the raw provider task on the job. If a vendor changes an endpoint, use the provider overrides where available or update the adapter. No fake success is returned when a provider is unreachable.
 
@@ -58,6 +60,7 @@ Jamendo only returns tracks with `audiodownload_allowed=true`. Each track stores
 | Mock | local | Synthesizes a 100 BPM beat bed; ideal for testing auto-cut. |
 | Stability Audio | `/v2beta/audio/stable-audio/text-to-audio` | Async submit + poll. Instrumental. Commercial terms depend on the Stability licence/revenue threshold. |
 | ElevenLabs Music | `/v1/music` | `xi-api-key`, `music_length_ms`, `force_instrumental`; returns MP3. Commercial use depends on plan. |
+| 火山引擎 纯音乐 | `https://open.volcengineapi.com` | GenBGM `Version=2024-08-12`, body `Text` + `Duration` + `Version=v5.0`; QueryTask polls `ResultUrl`. Paste `AccessKey:SecretKey` (not the Ark API key) into the key field; signed with Volcengine HMAC-SHA256 (`sami` / `cn-north-1`). |
 
 Suno/Udio are intentionally not integrated through unofficial wrappers.
 

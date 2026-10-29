@@ -214,21 +214,23 @@ export function SettingsScreen() {
             <div className="settings-form-grid">
               <Field label="默认编剧">
                 <select className="input" value={defaults.llm} onChange={(e) => setDefaults({ ...defaults, llm: e.target.value })}>
-                  {settings.providers.filter((p) => p.kind === "llm").map((p) => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
+                  {settings.providers.filter((p) => p.kind === "llm" && p.enabled).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}{p.id.startsWith("mock-") ? " · 离线" : p.apiKeySet ? " · 已配置 Key" : ""}
+                    </option>
                   ))}
                 </select>
               </Field>
               <Field label="默认图像">
                 <select className="input" value={defaults.image} onChange={(e) => setDefaults({ ...defaults, image: e.target.value })}>
-                  {settings.providers.filter((p) => p.kind === "image").map((p) => (
+                  {settings.providers.filter((p) => p.kind === "image" && p.enabled).map((p) => (
                     <option key={p.id} value={p.id}>{p.label}</option>
                   ))}
                 </select>
               </Field>
               <Field label="默认视频">
                 <select className="input" value={defaults.video} onChange={(e) => setDefaults({ ...defaults, video: e.target.value })}>
-                  {settings.providers.filter((p) => p.kind === "video").map((p) => (
+                  {settings.providers.filter((p) => p.kind === "video" && p.enabled).map((p) => (
                     <option key={p.id} value={p.id}>{p.label}</option>
                   ))}
                 </select>

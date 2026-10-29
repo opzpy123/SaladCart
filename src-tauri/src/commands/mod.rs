@@ -440,13 +440,28 @@ pub fn get_settings(state: State<'_, AppState>) -> AppResult<Settings> {
     Ok(settings::load(&state.paths))
 }
 
+fn promote_mock_default(settings: &mut Settings, provider_id: &str) -> bool {
+    let Some(provider) = settings.providers.iter().find(|p| p.id == provider_id) else {
+        return false;
+    };
+    if provider.kind == "llm"
+        && provider.enabled
+        && provider.api_key_set
+        && settings.defaults.llm.starts_with("mock-")
+    {
+        settings.defaults.llm = provider.id.clone();
+        return true;
+    }
+    false
+}
+
 #[tauri::command]
 pub fn update_provider(
     state: State<'_, AppState>,
     provider_id: String,
     patch: ProviderPatch,
 ) -> AppResult<Settings> {
-    let next = settings::update_persisted(&state.paths, |settings| {
+    let mut next = settings::update_persisted(&state.paths, |settings| {
         if let Some(provider) = settings.providers.iter_mut().find(|p| p.id == provider_id) {
             if let Some(v) = patch.enabled {
                 provider.enabled = v;
@@ -465,6 +480,10 @@ pub fn update_provider(
             }
         }
     })?;
+    if promote_mock_default(&mut next, &provider_id) {
+        settings::save(&state.paths, &next)?;
+        next = settings::load(&state.paths);
+    }
     if let Ok(mut current) = state.settings.write() {
         *current = next.clone();
     }
@@ -511,7 +530,11 @@ pub fn set_provider_secret(
     let current = settings::load(&state.paths);
     settings::find_provider(&current, &provider_id)?;
     crate::secrets::set_secret(&provider_id, &secret)?;
-    let next = settings::load(&state.paths);
+    let mut next = settings::load(&state.paths);
+    if promote_mock_default(&mut next, &provider_id) {
+        settings::save(&state.paths, &next)?;
+        next = settings::load(&state.paths);
+    }
     if let Ok(mut guard) = state.settings.write() {
         *guard = next.clone();
     }
@@ -523,8 +546,15 @@ pub fn clear_provider_secret(
     state: State<'_, AppState>,
     provider_id: String,
 ) -> AppResult<Settings> {
+    let current = settings::load(&state.paths);
+    let provider = settings::find_provider(&current, &provider_id)?.clone();
     crate::secrets::delete_secret(&provider_id)?;
-    let next = settings::load(&state.paths);
+    let mut next = settings::load(&state.paths);
+    if provider.kind == "llm" && next.defaults.llm == provider_id {
+        next.defaults.llm = "mock-llm".into();
+        settings::save(&state.paths, &next)?;
+        next = settings::load(&state.paths);
+    }
     if let Ok(mut guard) = state.settings.write() {
         *guard = next.clone();
     }

@@ -46,6 +46,7 @@ pub async fn generate(
         "replicate-image" => replicate(profile, require(secret, profile)?, request).await,
         "stability-image" => stability(profile, require(secret, profile)?, request).await,
         "fal-image" => fal(profile, require(secret, profile)?, request).await,
+        "ark-image" => ark(profile, require(secret, profile)?, request).await,
         "comfyui-image" => comfyui(profile, request).await,
         other => Err(AppError::Provider(format!(
             "image adapter not implemented for {other}"
@@ -510,6 +511,90 @@ async fn fal(
         }
     }
     Err(AppError::Provider("fal image generation timed out".into()))
+}
+
+fn ark_size(aspect: &str) -> &'static str {
+    match aspect {
+        "16:9" => "2560x1440",
+        "1:1" => "1920x1920",
+        "4:5" => "1728x2160",
+        "3:4" => "1664x2218",
+        _ => "1440x2560",
+    }
+}
+
+async fn ark(
+    profile: &ProviderProfile,
+    secret: &str,
+    request: &ImageRequest,
+) -> AppResult<ImageResult> {
+    let client = providers::client()?;
+    let mut body = json!({
+        "model": request.model,
+        "prompt": full_prompt(request),
+        "size": ark_size(&request.aspect_ratio),
+        "response_format": "url",
+        "watermark": false
+    });
+    if let Some(seed) = request.seed {
+        body["seed"] = json!(seed);
+    }
+    if !request.references.is_empty() {
+        let images: Vec<String> = request
+            .references
+            .iter()
+            .take(4)
+            .map(|reference| {
+                let bytes = std::fs::read(&reference.path)?;
+                Ok(format!(
+                    "data:{};base64,{}",
+                    reference.mime,
+                    base64::engine::general_purpose::STANDARD.encode(bytes)
+                ))
+            })
+            .collect::<AppResult<Vec<_>>>()?;
+        body["image"] = if images.len() == 1 {
+            json!(images[0])
+        } else {
+            json!(images)
+        };
+    }
+    let response = client
+        .post(providers::endpoint(profile, "images/generations"))
+        .bearer_auth(secret)
+        .json(&body)
+        .send()
+        .await?;
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(providers::error_from_response(status, &body));
+    }
+    let value: Value = response.json().await?;
+    let data = value
+        .get("data")
+        .and_then(|v| v.as_array())
+        .and_then(|v| v.first())
+        .ok_or_else(|| AppError::Provider("Ark Seedream returned no image data".into()))?;
+    let bytes = if let Some(b64) = data.get("b64_json").and_then(|v| v.as_str()) {
+        base64::engine::general_purpose::STANDARD
+            .decode(b64)
+            .map_err(|e| AppError::Provider(format!("invalid Ark base64 image: {e}")))?
+    } else if let Some(url) = data.get("url").and_then(|v| v.as_str()) {
+        client.get(url).send().await?.bytes().await?.to_vec()
+    } else {
+        return Err(AppError::Provider(
+            "Ark Seedream returned neither url nor b64_json".into(),
+        ));
+    };
+    let mime = providers::sniff_image_mime(&bytes).to_string();
+    Ok(ImageResult {
+        extension: providers::output_ext(&mime).to_string(),
+        mime,
+        cost: providers::estimate_cost(&profile.id, "image", 0, request.count),
+        bytes,
+        raw: value,
+    })
 }
 
 async fn comfyui(profile: &ProviderProfile, request: &ImageRequest) -> AppResult<ImageResult> {

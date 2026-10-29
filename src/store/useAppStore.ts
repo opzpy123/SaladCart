@@ -73,7 +73,12 @@ interface AppStore {
   refreshProjects: () => Promise<void>;
   refreshSnapshot: (silent?: boolean) => Promise<void>;
   openProject: (id: string) => Promise<void>;
-  createProject: (input: CreateProjectInput, generateAfter: boolean, episodes?: number) => Promise<void>;
+  createProject: (
+    input: CreateProjectInput,
+    generateAfter: boolean,
+    episodes?: number,
+    providerId?: string,
+  ) => Promise<void>;
   createDemo: () => Promise<void>;
   archiveProject: (id: string) => Promise<void>;
   updateProject: (input: UpdateProjectInput) => Promise<void>;
@@ -367,7 +372,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
       }
     },
 
-    createProject: async (input, generateAfter, episodes = 1) => {
+    createProject: async (input, generateAfter, episodes = 1, providerId) => {
       set({ loading: true });
       try {
         const snapshot = await invoke<ProjectSnapshot>("create_project", { input });
@@ -391,6 +396,7 @@ export const useAppStore = create<AppStore>()((set, get) => {
             styleNotes: "",
             replaceExisting: false,
             episodes,
+            providerId: providerId || null,
           });
         }
       } catch (error) {
