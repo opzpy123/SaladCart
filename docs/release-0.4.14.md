@@ -37,6 +37,11 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   1080×1920 MP4 with burned subtitles, confirmed the file landed in that folder, and
   extracted a frame: “字幕烧录测试” is centered at the bottom safe area with normal size.
   The subtitle and test export were then removed and the export folder reset to Desktop.
+- Post-fix real DeepSeek rerun: a 411-character / 2-chapter story produced 1 episode,
+  12 shots and 3 characters. `locked_traits` were populated (8 / 8 / 4 entries), shot
+  durations varied from 5–9 seconds, and scene times were preserved (`深夜`). The test
+  project was archived; the real project context card now shows the generated trait
+  locks.
 - macOS/Windows CI reruns this tree; the previous Windows job passed bundled-FFmpeg
   checks, Rust tests, SAPI TTS smoke, installer build and packaged `--selftest`.
 
