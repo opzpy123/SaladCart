@@ -377,8 +377,15 @@ fn secret_available(provider: &crate::models::ProviderProfile, keychain_availabl
     if local {
         return false;
     }
-    (keychain_available && secrets::has_secret(&provider.id).unwrap_or(false))
-        || (!provider.env_var.is_empty() && std::env::var(&provider.env_var).is_ok())
+    // An explicit environment override wins and avoids touching the Keychain.
+    if !provider.env_var.is_empty()
+        && std::env::var(&provider.env_var)
+            .map(|value| !value.is_empty())
+            .unwrap_or(false)
+    {
+        return true;
+    }
+    keychain_available && secrets::has_secret(&provider.id).unwrap_or(false)
 }
 
 pub fn ensure_ready(provider: &crate::models::ProviderProfile) -> AppResult<()> {
@@ -392,16 +399,16 @@ pub fn ensure_ready(provider: &crate::models::ProviderProfile) -> AppResult<()> 
 }
 
 pub fn resolve_secret(provider: &crate::models::ProviderProfile) -> AppResult<String> {
-    if let Ok(value) = secrets::get_secret(&provider.id) {
-        if !value.is_empty() {
-            return Ok(value);
-        }
-    }
     if !provider.env_var.is_empty() {
         if let Ok(value) = std::env::var(&provider.env_var) {
             if !value.is_empty() {
                 return Ok(value);
             }
+        }
+    }
+    if let Ok(value) = secrets::get_secret(&provider.id) {
+        if !value.is_empty() {
+            return Ok(value);
         }
     }
     Err(AppError::MissingCredential(format!(

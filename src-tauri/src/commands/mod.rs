@@ -583,14 +583,13 @@ pub fn set_trend_source(
             crate::secrets::set_secret("douyin-trend", token.trim())?;
         }
     }
-    let mut next = settings::update_persisted(&state.paths, |settings| {
+    let next = settings::update_persisted(&state.paths, |settings| {
         settings.trend_source_url = if trimmed.is_empty() {
             None
         } else {
             Some(trimmed.to_string())
         };
     })?;
-    next = settings::load(&state.paths);
     if let Ok(mut current) = state.settings.write() {
         *current = next.clone();
     }

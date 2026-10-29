@@ -59,8 +59,10 @@ pub fn probe_keychain() -> bool {
 }
 
 pub fn has_secret(provider_id: &str) -> AppResult<bool> {
-    // A locked or unresponsive Keychain must not block startup forever.
-    match read_with_timeout(provider_id, QUERY_TIMEOUT) {
+    // A locked or unresponsive Keychain must not block startup forever. The
+    // probe above already fails fast when it is locked; real entries can take
+    // longer on the first ACL check, so don't reuse the 300ms probe timeout.
+    match read_with_timeout(provider_id, READ_TIMEOUT) {
         Ok(value) => Ok(value.map(|secret| !secret.is_empty()).unwrap_or(false)),
         Err(_) => Ok(false),
     }
