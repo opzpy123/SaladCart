@@ -373,11 +373,19 @@ async fn novel_llm_contract_turns_chunk_analyses_into_episodes() {
     assert_eq!(result.analysis["mode"], "llm");
     assert_eq!(result.script.episodes.len(), 2);
     assert_eq!(result.script.characters.len(), 1);
+    assert_eq!(
+        result.script.characters[0].locked_traits,
+        ["黑色短发", "深灰风衣"]
+    );
     assert!(result
         .script
         .episodes
         .iter()
         .all(|episode| episode.scenes.len() == 2));
+    let first_episode = &result.script.episodes[0];
+    assert_eq!(first_episode.scenes[0].time_of_day, "NIGHT");
+    assert_eq!(first_episode.scenes[0].shots[0].duration_sec, 5);
+    assert_eq!(first_episode.scenes[1].shots[0].duration_sec, 6);
     assert_eq!(result.chunk_count, 2);
     assert_eq!(result.calls, 2);
 }
