@@ -45,8 +45,10 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   durations varied from 5–9 seconds, and scene times were preserved (`深夜`). The test
   project was archived; the real project context card now shows the generated trait
   locks.
-- macOS/Windows CI reruns this tree; the previous Windows job passed bundled-FFmpeg
-  checks, Rust tests, SAPI TTS smoke, installer build and packaged `--selftest`.
+- macOS/Windows CI for this tree: run `40836638033` passed the macOS arm64 and Windows
+  x64 jobs; Windows bundled-FFmpeg checks, Rust tests, SAPI TTS smoke, installer build
+  and packaged `--selftest` all succeeded. Artifact `saladcart-windows-x64` is
+  52,025,345 bytes (see [windows-ci-verification.md](windows-ci-verification.md)).
 
 ## Remaining setup
 

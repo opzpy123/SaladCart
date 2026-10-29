@@ -3,6 +3,18 @@
 SaladCart ships unsigned Windows x64 installers from GitHub Actions. This note records
 the evidence used to treat Windows as build-and-selftest verified.
 
+## v0.4.14 run
+
+- Workflow: **Build desktop installers**
+- Run: [`40836638033`](https://github.com/opzpy123/SaladCart/actions/runs/40836638033)
+  (`v0.4.14`, commit `04d2d96`)
+- Windows job: `build (windows-latest, windows-x64, x86_64-pc-windows-msvc)` — success
+- Passed steps include bundled-FFmpeg verification, Rust tests, Windows TTS smoke test,
+  installer build, and **Windows packaged selftest**.
+- Artifact: `saladcart-windows-x64` (52,025,345 bytes zip), containing the NSIS
+  `*-setup.exe` and MSI installers.
+- macOS arm64 also passed in this run.
+
 ## v0.4.12 run
 
 - Workflow: **Build desktop installers**
