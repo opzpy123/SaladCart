@@ -1,7 +1,7 @@
 {
   "name": "saladcart",
   "private": true,
-  "version": "0.4.14",
+  "version": "0.4.15",
   "type": "module",
   "description": "SaladCart — a native AI comic-drama production workstation",
   "scripts": {
