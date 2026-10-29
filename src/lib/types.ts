@@ -327,6 +327,16 @@ export interface Settings {
   storageDir: string | null;
   uiLanguage: string;
   keychainAvailable?: boolean | null;
+  trendSourceUrl?: string | null;
+  trendTokenSet?: boolean;
+}
+
+export interface TrendItem {
+  rank: number;
+  title: string;
+  hot: number | null;
+  url: string | null;
+  cover: string | null;
 }
 
 export interface ContextAssetRef {

@@ -326,6 +326,8 @@ pub fn default_settings() -> Settings {
         storage_dir: None,
         ui_language: "zh-CN".into(),
         keychain_available: None,
+        trend_source_url: None,
+        trend_token_set: false,
     }
 }
 
@@ -348,6 +350,8 @@ pub fn load(paths: &AppPaths) -> Settings {
     }
     let keychain_available = secrets::probe_keychain();
     settings.keychain_available = Some(keychain_available);
+    settings.trend_token_set =
+        keychain_available && secrets::has_secret("douyin-trend").unwrap_or(false);
     for provider in &mut settings.providers {
         provider.api_key_set =
             provider.enabled && secret_available(provider, keychain_available);
@@ -360,6 +364,7 @@ pub fn save(paths: &AppPaths, settings: &Settings) -> AppResult<()> {
     for provider in &mut clean.providers {
         provider.api_key_set = false;
     }
+    clean.trend_token_set = false;
     let body = serde_json::to_string_pretty(&clean)?;
     std::fs::write(&paths.settings_file, body)?;
     Ok(())

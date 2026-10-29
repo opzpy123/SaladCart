@@ -1,6 +1,6 @@
 use crate::error::{AppError, AppResult};
 use crate::models::*;
-use crate::services::{context, jobs, media, music as music_service};
+use crate::services::{context, jobs, media, music as music_service, trends};
 use crate::settings;
 use crate::state::AppState;
 use crate::store::{self, ProjectStore};
@@ -564,6 +564,72 @@ pub fn clear_provider_secret(
         *guard = next.clone();
     }
     Ok(next)
+}
+
+#[tauri::command]
+pub fn set_trend_source(
+    state: State<'_, AppState>,
+    url: String,
+    token: Option<String>,
+) -> AppResult<Settings> {
+    let trimmed = url.trim();
+    if !trimmed.is_empty() {
+        trends::validate_source(trimmed)?;
+    }
+    if let Some(token) = token {
+        if token.trim().is_empty() {
+            crate::secrets::delete_secret("douyin-trend")?;
+        } else {
+            crate::secrets::set_secret("douyin-trend", token.trim())?;
+        }
+    }
+    let mut next = settings::update_persisted(&state.paths, |settings| {
+        settings.trend_source_url = if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        };
+    })?;
+    next = settings::load(&state.paths);
+    if let Ok(mut current) = state.settings.write() {
+        *current = next.clone();
+    }
+    Ok(next)
+}
+
+#[tauri::command]
+pub async fn fetch_trending(state: State<'_, AppState>) -> AppResult<Vec<TrendItem>> {
+    let settings = settings::load(&state.paths);
+    let source = settings.trend_source_url.ok_or_else(|| {
+        AppError::Invalid("请先在设置中配置抖音热榜数据源 URL".into())
+    })?;
+    let token = crate::secrets::get_secret("douyin-trend").ok();
+    trends::fetch(&source, token.as_deref()).await
+}
+
+#[tauri::command]
+pub async fn suggest_trends(
+    state: State<'_, AppState>,
+    project_id: String,
+    items: Vec<TrendItem>,
+) -> AppResult<String> {
+    let store = open(&state, &project_id)?;
+    let project = store.project()?;
+    let settings = settings::load(&state.paths);
+    let profile = settings::find_provider(&settings, &settings.defaults.llm)?.clone();
+    if !profile.enabled {
+        return Err(AppError::Invalid(format!(
+            "{} 未启用，请先在设置中启用真实编剧模型",
+            profile.label
+        )));
+    }
+    settings::ensure_ready(&profile)?;
+    let secret = if profile.id.starts_with("mock-") {
+        None
+    } else {
+        Some(settings::resolve_secret(&profile)?)
+    };
+    trends::suggest(&profile, secret.as_deref(), &project, &items).await
 }
 
 #[tauri::command]

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ArrowUpRight,
   BookOpen,
@@ -5,6 +6,7 @@ import {
   Clapperboard,
   Clock3,
   Film,
+  Flame,
   FolderKanban,
   Image as ImageIcon,
   Layers,
@@ -19,6 +21,7 @@ import {
 import { assetUrl, formatCurrency, formatDuration, relativeTime } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
 import type { ProjectSummary } from "@/lib/types";
+import { TrendReferenceDialog } from "@/components/Dialogs";
 import {
   Button,
   EmptyState,
@@ -40,6 +43,7 @@ export function ProjectDashboard() {
   const setRoute = useAppStore((s) => s.setRoute);
   const archive = useAppStore((s) => s.archiveProject);
   const createDemo = useAppStore((s) => s.createDemo);
+  const [trendOpen, setTrendOpen] = useState(false);
 
   const latest = projects[0];
   const activeSummary = snapshot
@@ -85,6 +89,14 @@ export function ProjectDashboard() {
               onClick={() => void createDemo()}
             >
               载入演示项目
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              icon={<Flame size={17} />}
+              onClick={() => setTrendOpen(true)}
+            >
+              抖音热门参考
             </Button>
             {latest ? (
               <Button
@@ -309,6 +321,8 @@ export function ProjectDashboard() {
         <Feature icon={<Wand2 size={18} />} title="批量抽卡" text="任务队列、并发、重试与版本保留，不再手工等。" />
         <Feature icon={<Music size={18} />} title="音乐自动卡点" text="搜索/生成配乐，分析 BPM，让切点落在节拍上。" />
       </section>
+
+      <TrendReferenceDialog open={trendOpen} onClose={() => setTrendOpen(false)} />
     </div>
   );
 }

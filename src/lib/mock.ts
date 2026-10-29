@@ -1498,7 +1498,7 @@ async function mockInvoke<T>(cmd: string, args: Record<string, unknown> = {}): P
         ffmpegPath: "/opt/homebrew/bin/ffmpeg",
         ffmpegVersion: "ffmpeg version 8.0 (demo bridge)",
         platform: "browser demo · 原生构建请使用 Tauri",
-        appVersion: "0.4.8",
+        appVersion: "0.4.9",
         storageDir: "~/Library/Application Support/com.saladcart.studio",
         projectCount: projects.length,
         dataDir: "~/Library/Application Support/com.saladcart.studio",

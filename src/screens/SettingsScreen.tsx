@@ -13,7 +13,7 @@ import {
   Terminal,
   X,
 } from "lucide-react";
-import { invoke } from "@/lib/bridge";
+import { formatError, invoke } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
 import type { ProviderProfile, ProviderTestResult } from "@/lib/types";
 import {
@@ -48,6 +48,9 @@ export function SettingsScreen() {
   const [defaults, setDefaults] = useState({ llm: "", image: "", video: "", concurrency: 2 });
   const [ffmpegPath, setFfmpegPath] = useState("");
   const [budgetCap, setBudgetCap] = useState("");
+  const [trendUrl, setTrendUrl] = useState("");
+  const [trendToken, setTrendToken] = useState("");
+  const [savingTrend, setSavingTrend] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export function SettingsScreen() {
       concurrency: settings.concurrency,
     });
     setFfmpegPath(settings.ffmpegPath ?? system?.ffmpegPath ?? "");
+    setTrendUrl(settings.trendSourceUrl ?? "");
   }, [settings, system?.ffmpegPath]);
 
   const providers = useMemo(
@@ -101,6 +105,23 @@ export function SettingsScreen() {
     await refreshSettings();
     setSaving(false);
     pushToast("success", "FFmpeg 路径已更新");
+  };
+
+  const saveTrendSource = async (clearToken = false) => {
+    setSavingTrend(true);
+    try {
+      await invoke("set_trend_source", {
+        url: trendUrl.trim(),
+        token: clearToken ? "" : trendToken.trim() || null,
+      });
+      setTrendToken("");
+      await refreshSettings();
+      pushToast("success", clearToken ? "热榜令牌已清除" : "热榜数据源已保存");
+    } catch (error) {
+      pushToast("error", "无法保存热榜数据源", formatError(error));
+    } finally {
+      setSavingTrend(false);
+    }
   };
 
   const saveBudget = async () => {
@@ -186,6 +207,57 @@ export function SettingsScreen() {
                 的原创打击乐，用来验证卡点与导出。
               </InlineNotice>
             ) : null}
+          </section>
+
+          <section className="panel settings-section">
+            <SectionHeader
+              title="抖音热门参考"
+              subtitle="读取你授权的热榜接口，再由当前编剧模型生成原创参考方向。不会抓取抖音网页。"
+            />
+            <div className="settings-form-grid">
+              <Field
+                label="热榜接口 URL"
+                hint="必须是 HTTPS 公网地址；支持 data/list/result 嵌套数组，字段兼容 title/word、hot_value/hot 等"
+              >
+                <input
+                  className="input input--mono"
+                  value={trendUrl}
+                  onChange={(event) => setTrendUrl(event.target.value)}
+                  placeholder="https://open.douyin.com/... 或你的授权接口"
+                />
+              </Field>
+              <Field
+                label="访问令牌（可选）"
+                hint={settings.trendTokenSet ? "已存入钥匙串；留空保持不变" : "以 Bearer 方式发送"}
+              >
+                <input
+                  className="input input--mono"
+                  type="password"
+                  value={trendToken}
+                  onChange={(event) => setTrendToken(event.target.value)}
+                  placeholder={settings.trendTokenSet ? "•••••••• 输入新令牌可替换" : "Bearer token"}
+                />
+              </Field>
+            </div>
+            <div className="settings-actions">
+              {settings.trendTokenSet ? (
+                <Button size="sm" variant="ghost" onClick={() => void saveTrendSource(true)}>
+                  清除令牌
+                </Button>
+              ) : null}
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={savingTrend}
+                onClick={() => void saveTrendSource(false)}
+              >
+                保存热榜源
+              </Button>
+            </div>
+            <InlineNotice tone="info">
+              抖音没有免鉴权的热门视频 API；请使用官方开放平台（热点榜/热门视频榜 scope）或你有权限的数据服务。
+              热榜仅作为选题参考，生成建议时会明确要求不照搬原视频。
+            </InlineNotice>
           </section>
 
           {snapshot ? (
@@ -326,7 +398,7 @@ export function SettingsScreen() {
               素材溯源都在本机完成。
             </p>
             <div className="about-stats">
-              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.8"}</strong></div>
+              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.9"}</strong></div>
               <div><span>运行平台</span><strong>{system?.platform ?? "macOS / Windows"}</strong></div>
               <div><span>项目数</span><strong>{system?.projectCount ?? 0}</strong></div>
             </div>

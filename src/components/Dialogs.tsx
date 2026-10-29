@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Clapperboard, Sparkles, Upload, Wand2 } from "lucide-react";
+import { BookOpen, Clapperboard, Flame, RefreshCw, Sparkles, Upload, Wand2 } from "lucide-react";
 import { Button, Field, InlineNotice, Modal } from "./ui";
 import { formatError, invoke, isDesktop, pickNovelFile } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
-import type { GenerateScriptRequest, NovelPlan } from "@/lib/types";
+import type { GenerateScriptRequest, NovelPlan, TrendItem } from "@/lib/types";
 import { enabledProviders, preferredProviderId } from "@/lib/providers";
 
 const STYLE_PRESETS = [
@@ -622,6 +622,143 @@ export function NovelAdaptDialog() {
       <InlineNotice tone="info">
         正文会复制进当前项目；每 6,000 字左右调用一次模型，角色名与锁定特征会跨章节合并。
       </InlineNotice>
+    </Modal>
+  );
+}
+
+function formatHot(hot: number | null): string {
+  if (hot === null) return "";
+  if (hot >= 100_000_000) return `${(hot / 100_000_000).toFixed(1)} 亿`;
+  if (hot >= 10_000) return `${(hot / 10_000).toFixed(1)} 万`;
+  return String(hot);
+}
+
+export function TrendReferenceDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const snapshot = useAppStore((state) => state.snapshot);
+  const settings = useAppStore((state) => state.settings);
+  const setRoute = useAppStore((state) => state.setRoute);
+  const pushToast = useAppStore((state) => state.pushToast);
+  const [trends, setTrends] = useState<TrendItem[]>([]);
+  const [suggestions, setSuggestions] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    setSuggestions("");
+    try {
+      const items = await invoke<TrendItem[]>("fetch_trending");
+      setTrends(items);
+    } catch (loadError) {
+      setTrends([]);
+      setError(formatError(loadError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open && settings?.trendSourceUrl) void load();
+  }, [open, settings?.trendSourceUrl]);
+
+  const generate = async () => {
+    if (!snapshot || trends.length === 0) return;
+    setGenerating(true);
+    setError("");
+    try {
+      const brief = await invoke<string>("suggest_trends", {
+        projectId: snapshot.project.id,
+        items: trends.slice(0, 10),
+      });
+      setSuggestions(brief);
+    } catch (generateError) {
+      setError(formatError(generateError));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const copy = async () => {
+    if (!suggestions) return;
+    try {
+      await navigator.clipboard.writeText(suggestions);
+      pushToast("success", "参考建议已复制");
+    } catch {
+      pushToast("error", "无法写入剪贴板");
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="抖音热门参考"
+      subtitle="读取你配置的授权热榜数据源，再结合当前项目由 DeepSeek 生成原创参考方向。"
+      wide
+      footer={
+        <>
+          <span className="modal__footnote">只把热榜当作受众信号，禁止照搬热门视频的情节、台词或角色。</span>
+          <Button variant="ghost" onClick={onClose}>关闭</Button>
+          {suggestions ? <Button variant="secondary" onClick={() => void copy()}>复制建议</Button> : null}
+          <Button
+            variant="primary"
+            icon={<Sparkles size={15} />}
+            loading={generating}
+            disabled={!snapshot || trends.length === 0}
+            onClick={() => void generate()}
+          >
+            生成参考建议
+          </Button>
+        </>
+      }
+    >
+      {!settings?.trendSourceUrl ? (
+        <InlineNotice tone="warn">
+          还没有配置抖音热榜数据源。抖音没有公开免鉴权的热门视频 API，请使用官方开放平台或你有权限的接口。
+          <button
+            className="linklike"
+            type="button"
+            onClick={() => {
+              onClose();
+              setRoute("settings");
+            }}
+          >
+            去设置
+          </button>
+        </InlineNotice>
+      ) : (
+        <>
+          <div className="trend-toolbar">
+            <span className="muted small">数据源：{settings.trendSourceUrl}</span>
+            <Button size="sm" variant="ghost" icon={<RefreshCw size={13} />} loading={loading} onClick={() => void load()}>
+              刷新
+            </Button>
+          </div>
+          {loading ? <p className="muted small"><Flame size={13} /> 正在读取热榜…</p> : null}
+          {trends.length ? (
+            <ol className="trend-list">
+              {trends.slice(0, 10).map((item) => (
+                <li key={`${item.rank}-${item.title}`}>
+                  <span className="trend-rank">{String(item.rank).padStart(2, "0")}</span>
+                  <span className="trend-title">{item.title}</span>
+                  <span className="trend-hot">{formatHot(item.hot)}</span>
+                </li>
+              ))}
+            </ol>
+          ) : !loading && !error ? (
+            <p className="muted small">没有读取到热榜数据。</p>
+          ) : null}
+        </>
+      )}
+      {error ? <InlineNotice tone="warn">{error}</InlineNotice> : null}
+      {suggestions ? (
+        <div className="trend-brief">
+          <p className="panel-label">项目参考建议</p>
+          <pre>{suggestions}</pre>
+        </div>
+      ) : null}
     </Modal>
   );
 }

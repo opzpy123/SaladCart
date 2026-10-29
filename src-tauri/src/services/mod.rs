@@ -6,4 +6,5 @@ pub mod music;
 pub mod novel;
 pub mod provenance;
 pub mod script;
+pub mod trends;
 pub mod voice;

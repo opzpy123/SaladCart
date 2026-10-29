@@ -380,6 +380,20 @@ pub struct Settings {
     pub ui_language: String,
     #[serde(default)]
     pub keychain_available: Option<bool>,
+    #[serde(default)]
+    pub trend_source_url: Option<String>,
+    #[serde(default)]
+    pub trend_token_set: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TrendItem {
+    pub rank: i64,
+    pub title: String,
+    pub hot: Option<i64>,
+    pub url: Option<String>,
+    pub cover: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
