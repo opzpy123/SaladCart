@@ -75,7 +75,7 @@ Windows: %APPDATA%\com.saladcart.studio
 
 - Rust（33 项自动 + 3 项手动/外部依赖测试）：项目隔离、任务读写、Mock 剧本生成、剧本落库、角色绑定、跨项目风格复制、素材导入与媒体元数据、跨项目角色原子导入、上下文编译器、关键帧作为视频首帧、镜头历史 take 与审片装配、项目预算护栏、长篇小说切章/分块改编、小说 LLM 分块契约、OpenAI Images / Kling / 火山方舟 Seedream / Seedance / GenBGM 契约测试、完整演示项目、时间线自动装配、节拍吸附、节拍检测、Mock WAV、真实 FFmpeg 音视频混合渲染、原片静音混音、Windows 文件名清洗、溯源清单、系统配音、DeepSeek 实时剧本生成。
 - 前端（10 项）：时间码/时长工具、浏览器演示桥接、上下文编译、Jamendo 曲库搜索、节拍分析/卡点、真实模型默认路由。
-- 真实供应商：DeepSeek 剧本与小说改编、Seedream 5.0 Flash 关键帧/角色定妆照、Seedance 1.0 Pro Fast 图生视频均实际出片；真实视频已写入镜头 take、自动装配并导出 1080×1920 MP4。
+- 真实供应商：DeepSeek 剧本与小说改编、Seedream 5.0 Flash 关键帧/角色定妆照、Seedance 1.0 Pro Fast 图生视频均实际出片；真实视频已写入镜头 take、自动装配并导出 1080×1920 MP4；macOS 系统 TTS 生成了 1.56s 配音素材。
 - 发布自检：macOS 打包 `.app` 执行 `saladcart --selftest` 成功（4 片段、19 秒 MP4、423,595 字节）；Windows 便携包同样带自检。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、3 章小说改编为 3 集 9 镜、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
 - 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。

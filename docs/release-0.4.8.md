@@ -27,6 +27,7 @@ System Settings → Privacy & Security → **Open Anyway**.
 - Real Seedance 1.0 Pro Fast image-to-video (1088×1920, 5.04s), attached to shot 1,
   timeline assembled, 1080×1920 MP4 exported (2,518,406 bytes), frame checked.
 - DeepSeek script (16.8s) and two-chapter novel adaptation (16.5s) passed.
+- Native macOS TTS generated a 1.56s Chinese voice asset for shot 2 and linked it to the shot.
 - `cargo test` 33 automated + 3 ignored/manual; `pnpm test` 10/10; `pnpm build` and
   `pnpm tauri build` passed.
 - Project isolation verified: one real project remains; archived items are in `trash/`.
