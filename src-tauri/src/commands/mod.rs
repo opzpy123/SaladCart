@@ -529,6 +529,11 @@ pub fn set_provider_secret(
 ) -> AppResult<Settings> {
     let current = settings::load(&state.paths);
     settings::find_provider(&current, &provider_id)?;
+    if provider_id == "volc-music" && !secret.trim().is_empty() && !secret.contains(':') {
+        return Err(AppError::Invalid(
+            "火山引擎纯音乐需要 AccessKey:SecretKey（IAM 访问密钥，不是方舟 API Key）".into(),
+        ));
+    }
     crate::secrets::set_secret(&provider_id, &secret)?;
     let mut next = settings::load(&state.paths);
     if promote_mock_default(&mut next, &provider_id) {
