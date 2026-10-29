@@ -28,8 +28,9 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   `npx tsc --noEmit` clean.
 - `pnpm tauri build` passed; DMG mounted and packaged `--selftest` passed (19 s export,
   423,595 bytes MP4).
-- The 0.4.15 tag run `40841915463` already proved the Windows/macOS builds and draft
-  release; 0.4.16 reruns the same workflow.
+- The 0.4.16 tag run [`40848947259`](https://github.com/opzpy123/SaladCart/actions/runs/40848947259)
+  completed Windows, macOS arm64, macOS x64 and the draft-release job successfully;
+  Windows passed the packaged selftest and the draft release was created.
 
 ## Remaining setup
 

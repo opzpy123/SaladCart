@@ -3,6 +3,15 @@
 SaladCart ships unsigned Windows x64 installers from GitHub Actions. This note records
 the evidence used to treat Windows as build-and-selftest verified.
 
+## v0.4.16 run
+
+- Workflow: **Build desktop installers**
+- Run: [`40848947259`](https://github.com/opzpy123/SaladCart/actions/runs/40848947259)
+  (`v0.4.16`, commit `66b46bb`)
+- Windows, macOS arm64, macOS x64 and the draft-release job all completed **success**.
+- Windows passed bundled-FFmpeg verification, Rust tests, TTS smoke, installer build and
+  packaged selftest; the draft release was created.
+
 ## v0.4.15 run
 
 - Workflow: **Build desktop installers**
