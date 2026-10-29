@@ -35,8 +35,8 @@ System Settings → Privacy & Security → **Open Anyway**.
 - **Real image**: Seedream 5.0 Flash generated a 1440×2560 JPEG for shot 1; character
   portraits for 嘉豪 / 林小满 / 王叔 also succeeded.
 - **Real video**: Seedance 1.0 Pro Fast image-to-video task `cgt-20261029113407-2mrt7`
-  succeeded in 36 seconds with a downloadable MP4 URL (direct provider probe using the
-  exact app adapter).
+  succeeded in 36 seconds; the 1088×1920 / 5.04s MP4 was attached to shot 1, the timeline
+  auto-assembled to 1 clip, and FFmpeg exported a 1080×1920 MP4 (2,518,406 bytes).
 - **Real script / novel**: DeepSeek script generation (16.8s) and a two-chapter novel
   adaptation (16.5s, 2 canonical characters) passed.
 - `cargo test` — **33 automated tests passed**, 3 ignored/manual (DeepSeek live ×2,
