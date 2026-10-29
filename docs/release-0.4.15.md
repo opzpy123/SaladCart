@@ -30,6 +30,9 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   423,595 bytes MP4).
 - The 0.4.15 tag run must show the `release` job green; 0.4.14 already proved the
   Windows and macOS build jobs, bundled-FFmpeg checks, TTS smoke and packaged selftest.
+- As of the last check, the 0.4.15 Windows job passed (including packaged selftest);
+  macOS arm64 was still queued behind the Intel build, so the draft-release step had not
+  run yet.
 
 ## Remaining setup
 
