@@ -593,6 +593,25 @@ pub fn test_provider(
             latency_ms: started.elapsed().as_millis() as u64,
         });
     }
+    if provider.id == "volc-music" {
+        return match settings::resolve_secret(provider) {
+            Ok(secret) if secret.contains(':') => Ok(ProviderTestResult {
+                ok: true,
+                message: "IAM AccessKey:SecretKey 格式正确；真实生成会消耗额度。".into(),
+                latency_ms: started.elapsed().as_millis() as u64,
+            }),
+            Ok(_) => Ok(ProviderTestResult {
+                ok: false,
+                message: "当前值不是 AccessKey:SecretKey；纯音乐不使用方舟 API Key。".into(),
+                latency_ms: started.elapsed().as_millis() as u64,
+            }),
+            Err(_) => Ok(ProviderTestResult {
+                ok: false,
+                message: "钥匙串中没有可读的 IAM 凭证；请解锁 Mac 后重试。".into(),
+                latency_ms: started.elapsed().as_millis() as u64,
+            }),
+        };
+    }
     match settings::resolve_secret(provider) {
         Ok(_) => Ok(ProviderTestResult {
             ok: true,
