@@ -227,6 +227,24 @@ fn groups<'a>(chapters: &'a [NovelChapter], max_episodes: u32) -> Vec<Vec<&'a No
     out
 }
 
+fn character_key(name: &str) -> String {
+    let mut key = name.trim().to_lowercase();
+    for prefix in ["the ", "a ", "an "] {
+        if let Some(rest) = key.strip_prefix(prefix) {
+            key = rest.to_string();
+        }
+    }
+    for prefix in [
+        "穿着", "穿", "戴着", "戴", "披着", "披", "拄着", "拄", "提着", "提", "拿着",
+        "拿", "抱着", "抱",
+    ] {
+        if key.starts_with(prefix) && key.chars().count() > prefix.chars().count() + 1 {
+            key = key[prefix.len()..].to_string();
+        }
+    }
+    key.replace(['的', ' ', '　'], "")
+}
+
 fn merge_character(
     merged: &mut BTreeMap<String, GeneratedCharacter>,
     character: GeneratedCharacter,
@@ -235,12 +253,22 @@ fn merge_character(
     if name.is_empty() {
         return;
     }
-    if let Some(existing) = merged.get_mut(name) {
+    let key = character_key(name);
+    if key.is_empty() {
+        return;
+    }
+    if let Some(existing) = merged.get_mut(&key) {
         if existing.appearance.trim().is_empty() {
             existing.appearance = character.appearance;
         }
         if existing.personality.trim().is_empty() {
             existing.personality = character.personality;
+        }
+        if existing.role.trim().is_empty() {
+            existing.role = character.role;
+        }
+        if character.name.trim().chars().count() < existing.name.trim().chars().count() {
+            existing.name = character.name.trim().to_string();
         }
         for trait_name in character.locked_traits {
             if !trait_name.trim().is_empty()
@@ -251,7 +279,7 @@ fn merge_character(
             }
         }
     } else {
-        merged.insert(name.to_string(), character);
+        merged.insert(key, character);
     }
 }
 
@@ -561,7 +589,11 @@ async fn llm_adaptation(
             "the model returned no recurring characters; retry with a stronger model".into(),
         ));
     }
-    let character_names: Vec<String> = merged.keys().cloned().collect();
+    let character_names: Vec<String> = merged.values().map(|character| character.name.clone()).collect();
+    let character_lookup: BTreeMap<String, String> = merged
+        .iter()
+        .map(|(key, character)| (key.clone(), character.name.clone()))
+        .collect();
     let style = if project.style_bible.visual_style.trim().is_empty() {
         preset_style(Some("anime-cel"))
     } else {
@@ -590,12 +622,14 @@ async fn llm_adaptation(
                     } else {
                         beat.time_of_day.trim()
                     };
-                    let cast: Vec<String> = beat
-                        .characters
-                        .iter()
-                        .filter(|name| merged.contains_key(name.as_str()))
-                        .cloned()
-                        .collect();
+                    let mut cast: Vec<String> = Vec::new();
+                    for name in &beat.characters {
+                        if let Some(canonical) = character_lookup.get(&character_key(name)) {
+                            if !cast.contains(canonical) {
+                                cast.push(canonical.clone());
+                            }
+                        }
+                    }
                     let camera = if beat.camera.trim().is_empty() {
                         "slow push-in"
                     } else {
@@ -774,5 +808,26 @@ mod tests {
         assert_eq!(plan.chunk_count, 2);
         assert_eq!(plan.chapters.len(), 2);
         assert!(plan.char_count > 10);
+    }
+
+    #[test]
+    fn merges_descriptive_character_aliases() {
+        let mut merged = BTreeMap::new();
+        let character = |name: &str, trait_name: &str| GeneratedCharacter {
+            name: name.into(),
+            role: "配角".into(),
+            description: String::new(),
+            appearance: String::new(),
+            personality: String::new(),
+            voice: String::new(),
+            locked_traits: vec![trait_name.into()],
+        };
+        merge_character(&mut merged, character("穿雨衣的老人", "雨衣"));
+        merge_character(&mut merged, character("雨衣老人", "白发"));
+        assert_eq!(merged.len(), 1);
+        let merged_character = merged.values().next().unwrap();
+        assert_eq!(merged_character.name, "雨衣老人");
+        assert!(merged_character.locked_traits.contains(&"雨衣".to_string()));
+        assert!(merged_character.locked_traits.contains(&"白发".to_string()));
     }
 }

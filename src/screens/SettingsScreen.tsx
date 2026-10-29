@@ -365,7 +365,6 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
     await updateProvider(provider.id, {
       apiBase: base,
       defaultModel: model,
-      models: [model],
       options: provider.id === "minimax-video" ? { ...provider.options, groupId } : provider.options,
     });
   };
@@ -415,7 +414,16 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
         </div>
         <div className="provider-card__row">
           <span className="provider-label">默认模型</span>
-          <input className="input input--mono" value={model} onChange={(e) => setModel(e.target.value)} />
+          {provider.models.length > 1 ? (
+            <select className="input input--mono" value={model} onChange={(e) => setModel(e.target.value)}>
+              {provider.models.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+              {provider.models.includes(model) ? null : <option value={model}>{model}</option>}
+            </select>
+          ) : (
+            <input className="input input--mono" value={model} onChange={(e) => setModel(e.target.value)} />
+          )}
         </div>
         {provider.id === "minimax-video" ? (
           <div className="provider-card__row">
@@ -467,6 +475,17 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
           </div>
         )}
       </div>
+
+      {provider.id.startsWith("ark-") ? (
+        <p className="muted tiny">
+          方舟模型按模型单独开通；未开通时真实调用会返回 404，请在火山方舟控制台开通默认模型。
+        </p>
+      ) : null}
+      {provider.id === "volc-music" ? (
+        <p className="muted tiny">
+          纯音乐使用 IAM AccessKey:SecretKey，不是方舟 API Key；并需开通 GenBGM v5.0。
+        </p>
+      ) : null}
 
       <div className="provider-card__foot">
         <div className="provider-card__test">
