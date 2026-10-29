@@ -86,6 +86,23 @@ fn first_hot(value: &Value, keys: &[&str]) -> Option<i64> {
         .find_map(|key| value.get(*key).and_then(parse_hot))
 }
 
+fn first_path_str(value: &Value, paths: &[&str]) -> Option<String> {
+    paths.iter().find_map(|path| {
+        value
+            .pointer(path)
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+    })
+}
+
+fn first_path_hot(value: &Value, paths: &[&str]) -> Option<i64> {
+    paths
+        .iter()
+        .find_map(|path| value.pointer(path).and_then(parse_hot))
+}
+
 fn collect_arrays<'a>(value: &'a Value, depth: usize, out: &mut Vec<&'a Vec<Value>>) {
     if depth > 4 {
         return;
@@ -124,7 +141,19 @@ pub fn parse(value: &Value) -> Vec<TrendItem> {
                     "sentence",
                     "content",
                 ],
-            )?;
+            )
+            .or_else(|| {
+                first_path_str(
+                    item,
+                    &[
+                        "/aweme_info/desc",
+                        "/aweme_info/aweme_desc",
+                        "/aweme_info/title",
+                        "/video/desc",
+                        "/item_title",
+                    ],
+                )
+            })?;
             Some(TrendItem {
                 rank: 0,
                 title,
@@ -140,9 +169,36 @@ pub fn parse(value: &Value) -> Vec<TrendItem> {
                         "view_count",
                         "hot_score",
                     ],
-                ),
-                url: first_str(item, &["url", "share_url", "link", "schema"]),
-                cover: first_str(item, &["cover", "cover_url", "image", "pic"]),
+                )
+                .or_else(|| {
+                    first_path_hot(
+                        item,
+                        &[
+                            "/statistics/play_count",
+                            "/statistics/digg_count",
+                            "/aweme_info/statistics/play_count",
+                            "/aweme_info/statistics/digg_count",
+                        ],
+                    )
+                }),
+                url: first_str(item, &["url", "share_url", "link", "schema"]).or_else(|| {
+                    first_path_str(
+                        item,
+                        &[
+                            "/share_info/share_url",
+                            "/aweme_info/share_info/share_url",
+                        ],
+                    )
+                }),
+                cover: first_str(item, &["cover", "cover_url", "image", "pic"]).or_else(|| {
+                    first_path_str(
+                        item,
+                        &[
+                            "/video/cover/url_list/0",
+                            "/aweme_info/video/cover/url_list/0",
+                        ],
+                    )
+                }),
             })
         })
         .take(20)
@@ -265,6 +321,26 @@ mod tests {
         assert_eq!(items[0].rank, 1);
         assert_eq!(items[0].hot, Some(12_000));
         assert_eq!(items[1].title, "第二条");
+    }
+
+    #[test]
+    fn parses_official_aweme_info_shape() {
+        let value = json!({
+            "data": {"list": [{
+                "aweme_info": {
+                    "desc": "官方热门视频",
+                    "statistics": {"play_count": 88000},
+                    "share_info": {"share_url": "https://www.douyin.com/video/1"},
+                    "video": {"cover": {"url_list": ["https://cdn.example/cover.jpg"]}}
+                }
+            }]}
+        });
+        let items = parse(&value);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].title, "官方热门视频");
+        assert_eq!(items[0].hot, Some(88_000));
+        assert_eq!(items[0].url.as_deref(), Some("https://www.douyin.com/video/1"));
+        assert_eq!(items[0].cover.as_deref(), Some("https://cdn.example/cover.jpg"));
     }
 
     #[test]
