@@ -49,6 +49,8 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   portrait asset, appearance, bio, personality, voice and 4 locked traits were copied.
   The imported card and dashboard context showed the traits correctly; the test project
   was archived.
+- Beat-sync UI: the demo timeline (100 BPM, 41 beat points) ran 自动卡点 and reported
+  “已对齐 2/4 个切点，平均偏移 0ms”; the demo project was archived afterwards.
 - macOS/Windows CI for this tree: run `40836638033` passed the macOS arm64 and Windows
   x64 jobs; Windows bundled-FFmpeg checks, Rust tests, SAPI TTS smoke, installer build
   and packaged `--selftest` all succeeded. Artifact `saladcart-windows-x64` is
