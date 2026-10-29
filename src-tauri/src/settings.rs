@@ -413,7 +413,7 @@ pub fn resolve_secret(provider: &crate::models::ProviderProfile) -> AppResult<St
         }
     }
     Err(AppError::MissingCredential(format!(
-        "{} needs an API key",
+        "{} 需要 API Key",
         provider.label
     )))
 }

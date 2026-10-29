@@ -685,7 +685,7 @@ pub fn test_provider(
         return Ok(ProviderTestResult {
             ok: true,
             message: format!(
-                "Local endpoint configured at {}. Make sure the service is running before generating.",
+                "本地接口已配置为 {}。生成前请确认服务已启动。",
                 provider.api_base
             ),
             latency_ms: started.elapsed().as_millis() as u64,
@@ -713,12 +713,12 @@ pub fn test_provider(
     match settings::resolve_secret(provider) {
         Ok(_) => Ok(ProviderTestResult {
             ok: true,
-            message: "API key is stored in the OS keychain. A real generation will verify account access and consume credits.".into(),
+            message: "API Key 已存入系统钥匙串；真实生成会验证账号并消耗额度。".into(),
             latency_ms: started.elapsed().as_millis() as u64,
         }),
         Err(_) => Ok(ProviderTestResult {
             ok: false,
-            message: "No API key found. Paste a key below; it is stored in the OS keychain, never in the project.".into(),
+            message: "未找到 API Key。请在下方粘贴；它只存入系统钥匙串，不写入项目。".into(),
             latency_ms: started.elapsed().as_millis() as u64,
         }),
     }

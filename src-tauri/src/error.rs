@@ -20,7 +20,7 @@ pub enum AppError {
     Cancelled,
     #[error("provider error: {0}")]
     Provider(String),
-    #[error("missing credential: {0}")]
+    #[error("缺少凭据：{0}")]
     MissingCredential(String),
     #[error("ffmpeg is unavailable")]
     FfmpegUnavailable,
@@ -66,5 +66,19 @@ pub trait OptionExt<T> {
 impl<T> OptionExt<T> for Option<T> {
     fn or_not_found(self, what: &str) -> AppResult<T> {
         self.ok_or_else(|| AppError::NotFound(what.to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn localizes_missing_credential_error() {
+        let error = AppError::MissingCredential("Jamendo 音乐库 需要 API Key".into());
+        assert_eq!(
+            error.to_string(),
+            "缺少凭据：Jamendo 音乐库 需要 API Key"
+        );
     }
 }
