@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { assetUrl, formatDuration, formatTimecode, relativeTime } from "@/lib/bridge";
 import { useAppStore } from "@/store/useAppStore";
+import { enabledProviders, preferredProviderId } from "@/lib/providers";
 import type { MusicTrack, Timeline, TimelineClip, TimelineClipInput } from "@/lib/types";
 import {
   Button,
@@ -83,15 +84,24 @@ export function EditorScreen() {
   const [musicPrompt, setMusicPrompt] = useState("雨夜、悬疑、克制的钢琴与低频脉冲");
   const [musicDuration, setMusicDuration] = useState(24);
   const [instrumental, setInstrumental] = useState(true);
-  const [musicProvider, setMusicProvider] = useState("mock-music");
+  const [musicProvider, setMusicProvider] = useState("");
   const [approvedOnly, setApprovedOnly] = useState(false);
   const musicProviders = useMemo(
     () =>
-      (settings?.providers ?? []).filter(
-        (provider) => provider.kind === "music" && provider.id !== "jamendo-music",
+      enabledProviders(settings?.providers ?? [], "music").filter(
+        (provider) => provider.id !== "jamendo-music",
       ),
     [settings],
   );
+
+  useEffect(() => {
+    if (!settings) return;
+    setMusicProvider((current) =>
+      current && musicProviders.some((provider) => provider.id === current)
+        ? current
+        : preferredProviderId(settings.providers, "music", "mock-music"),
+    );
+  }, [settings, musicProviders]);
   const [exportName, setExportName] = useState("");
   const [burnSubtitles, setBurnSubtitles] = useState(true);
   const [fps, setFps] = useState(30);
@@ -594,6 +604,11 @@ export function EditorScreen() {
                       {musicProviders.map((provider) => (
                         <option key={provider.id} value={provider.id}>
                           {provider.label}
+                          {provider.id.startsWith("mock-")
+                            ? " · 离线"
+                            : provider.apiKeySet
+                              ? " · 已配置 Key"
+                              : ""}
                         </option>
                       ))}
                     </select>
