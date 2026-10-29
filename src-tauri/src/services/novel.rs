@@ -411,7 +411,7 @@ struct AnalyzedCharacter {
     appearance: String,
     #[serde(default)]
     personality: String,
-    #[serde(default)]
+    #[serde(default, alias = "lockedTraits")]
     locked_traits: Vec<String>,
 }
 
@@ -423,7 +423,7 @@ struct AnalyzedBeat {
     summary: String,
     #[serde(default)]
     location: String,
-    #[serde(default)]
+    #[serde(default, alias = "timeOfDay")]
     time_of_day: String,
     #[serde(default)]
     characters: Vec<String>,
@@ -433,7 +433,7 @@ struct AnalyzedBeat {
     visual: String,
     #[serde(default)]
     camera: String,
-    #[serde(default)]
+    #[serde(default, alias = "durationSec")]
     duration_sec: i64,
 }
 
@@ -829,5 +829,35 @@ mod tests {
         assert_eq!(merged_character.name, "雨衣老人");
         assert!(merged_character.locked_traits.contains(&"雨衣".to_string()));
         assert!(merged_character.locked_traits.contains(&"白发".to_string()));
+    }
+
+    #[test]
+    fn parses_camel_case_chunk_json() {
+        let analysis: ChunkAnalysis = serde_json::from_value(serde_json::json!({
+            "summary": "林砚发现黑皮书。",
+            "characters": [{
+                "name": "林砚",
+                "role": "旧书店店主",
+                "appearance": "清瘦，深灰旧毛衣",
+                "personality": "克制",
+                "lockedTraits": ["深灰旧毛衣", "苍白肤色"]
+            }],
+            "beats": [{
+                "title": "铜铃自响",
+                "summary": "无风自动",
+                "location": "旧书店门口",
+                "timeOfDay": "NIGHT",
+                "characters": ["林砚"],
+                "dialogue": "",
+                "visual": "雨幕中的窄巷",
+                "camera": "低角度跟拍",
+                "durationSec": 7
+            }]
+        }))
+        .unwrap();
+
+        assert_eq!(analysis.characters[0].locked_traits, ["深灰旧毛衣", "苍白肤色"]);
+        assert_eq!(analysis.beats[0].time_of_day, "NIGHT");
+        assert_eq!(analysis.beats[0].duration_sec, 7);
     }
 }
