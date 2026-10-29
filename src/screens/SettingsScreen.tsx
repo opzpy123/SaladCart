@@ -326,7 +326,7 @@ export function SettingsScreen() {
               素材溯源都在本机完成。
             </p>
             <div className="about-stats">
-              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.6"}</strong></div>
+              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.7"}</strong></div>
               <div><span>运行平台</span><strong>{system?.platform ?? "macOS / Windows"}</strong></div>
               <div><span>项目数</span><strong>{system?.projectCount ?? 0}</strong></div>
             </div>

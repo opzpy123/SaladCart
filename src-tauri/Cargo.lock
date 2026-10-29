@@ -4150,7 +4150,7 @@ dependencies = [
 
 [[package]]
 name = "saladcart"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "ab_glyph",
  "base64 0.22.1",
