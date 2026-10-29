@@ -31,13 +31,13 @@ fn is_private_host(host: &str) -> bool {
 
 pub fn validate_source(source: &str) -> AppResult<Url> {
     let url = Url::parse(source.trim())
-        .map_err(|error| AppError::Invalid(format!("invalid trend source URL: {error}")))?;
+        .map_err(|error| AppError::Invalid(format!("热榜接口 URL 无效：{error}")))?;
     if url.scheme() != "https" {
-        return Err(AppError::Invalid("trend source must use https".into()));
+        return Err(AppError::Invalid("热榜接口必须使用 HTTPS".into()));
     }
     if !url.username().is_empty() || url.password().is_some() {
         return Err(AppError::Invalid(
-            "trend source URL must not embed credentials".into(),
+            "热榜接口 URL 不能包含账号或密码".into(),
         ));
     }
     if url
@@ -46,7 +46,7 @@ pub fn validate_source(source: &str) -> AppResult<Url> {
         .unwrap_or(true)
     {
         return Err(AppError::Invalid(
-            "trend source must be a public HTTPS host".into(),
+            "热榜接口必须是公网 HTTPS 地址".into(),
         ));
     }
     Ok(url)
@@ -230,14 +230,15 @@ pub async fn fetch(source: &str, token: Option<&str>) -> AppResult<Vec<TrendItem
     let bytes = response.bytes().await?;
     if bytes.len() > 2 * 1024 * 1024 {
         return Err(AppError::Invalid(
-            "trend source response is larger than 2 MB".into(),
+            "热榜接口返回内容超过 2 MB".into(),
         ));
     }
-    let value: Value = serde_json::from_slice(&bytes)?;
+    let value: Value = serde_json::from_slice(&bytes)
+        .map_err(|_| AppError::Invalid("热榜接口返回的不是合法 JSON".into()))?;
     let items = parse(&value);
     if items.is_empty() {
         return Err(AppError::Invalid(
-            "the trend source returned no recognizable hot items".into(),
+            "热榜接口没有返回可识别的热点条目".into(),
         ));
     }
     Ok(items)
@@ -255,7 +256,7 @@ pub async fn suggest(
         ));
     }
     if items.is_empty() {
-        return Err(AppError::Invalid("select at least one trend".into()));
+        return Err(AppError::Invalid("请至少选择一条热点".into()));
     }
     let trends = items
         .iter()

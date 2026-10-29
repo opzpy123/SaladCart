@@ -14,7 +14,7 @@ pub enum AppError {
     Http(#[from] reqwest::Error),
     #[error("not found: {0}")]
     NotFound(String),
-    #[error("invalid input: {0}")]
+    #[error("输入无效：{0}")]
     Invalid(String),
     #[error("operation canceled")]
     Cancelled,
