@@ -45,6 +45,10 @@ System Settings → Privacy & Security → **Open Anyway**. The Windows build is
   durations varied from 5–9 seconds, and scene times were preserved (`深夜`). The test
   project was archived; the real project context card now shows the generated trait
   locks.
+- Cross-project import: an isolated project imported 嘉豪 from the real project; the
+  portrait asset, appearance, bio, personality, voice and 4 locked traits were copied.
+  The imported card and dashboard context showed the traits correctly; the test project
+  was archived.
 - macOS/Windows CI for this tree: run `40836638033` passed the macOS arm64 and Windows
   x64 jobs; Windows bundled-FFmpeg checks, Rust tests, SAPI TTS smoke, installer build
   and packaged `--selftest` all succeeded. Artifact `saladcart-windows-x64` is
