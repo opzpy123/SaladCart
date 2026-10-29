@@ -173,7 +173,7 @@ export function SettingsScreen() {
             </div>
             {kind === "music" ? (
               <InlineNotice tone="info">
-                曲库搜索使用 Jamendo Client ID；AI 配乐可接 Stability Audio / Replicate。Mock 会本地合成 100 BPM
+                曲库搜索使用 Jamendo Client ID；AI 配乐可接 Stability Audio / ElevenLabs / 火山引擎纯音乐。Mock 会本地合成 100 BPM
                 的原创打击乐，用来验证卡点与导出。
               </InlineNotice>
             ) : null}
@@ -317,7 +317,7 @@ export function SettingsScreen() {
               素材溯源都在本机完成。
             </p>
             <div className="about-stats">
-              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.2"}</strong></div>
+              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.3"}</strong></div>
               <div><span>运行平台</span><strong>{system?.platform ?? "macOS / Windows"}</strong></div>
               <div><span>项目数</span><strong>{system?.projectCount ?? 0}</strong></div>
             </div>

@@ -623,7 +623,7 @@ export function EditorScreen() {
                 >
                   生成并应用
                 </Button>
-                <p className="muted tiny">离线 Mock 会合成一段 100 BPM 的可卡点配乐；配置 Key 后可选 Stability / ElevenLabs 生成。</p>
+                <p className="muted tiny">离线 Mock 会合成一段 100 BPM 的可卡点配乐；配置 Key 后可选 Stability / ElevenLabs / 火山引擎纯音乐。</p>
               </div>
 
               {audioAssets.length ? (
