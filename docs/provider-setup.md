@@ -43,7 +43,7 @@ Qwen keys are region-bound. If a compatible endpoint rejects `response_format`, 
 | Veo | `https://generativelanguage.googleapis.com/v1beta` | Long-running operation polling. Download uses the Gemini key. Preview model names change; edit the default model in Settings. |
 | Replicate | `https://api.replicate.com/v1` | Model-specific input field for the start frame (`start_image`, `first_frame_image`, `image`, detected from the model name). |
 | fal.ai | `https://queue.fal.run` | Queue submit → status → response. `Authorization: Key <FAL_KEY>`. |
-| 火山方舟 Seedance | `https://ark.cn-beijing.volces.com/api/v3` | `POST /contents/generations/tasks`, poll `GET /contents/generations/tasks/{id}`; Bearer `ARK_API_KEY`. Default `doubao-seedance-2-0-mini-260615`; content uses `text` + `image_url` (start frame/reference), plus `ratio`, `duration`, `seed`. |
+| 火山方舟 Seedance | `https://ark.cn-beijing.volces.com/api/v3` | `POST /contents/generations/tasks`, poll `GET /contents/generations/tasks/{id}`; Bearer `ARK_API_KEY`. Default `doubao-seedance-1-0-pro-fast-251015`; content uses `text` + `image_url` (start frame/reference), plus `ratio`, `duration`, `seed`. |
 
 Ark image/video models must be activated per model in the Volcengine Ark console before first use; a 404 `not activated` response is surfaced as a prompt to activate the model. GenBGM is a separate SAMI OpenAPI and needs an IAM `AccessKey:SecretKey`, not the Ark API key.
 

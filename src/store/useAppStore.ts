@@ -134,6 +134,7 @@ interface AppStore {
   saveProviderSecret: (providerId: string, secret: string) => Promise<void>;
   clearProviderSecret: (providerId: string) => Promise<void>;
   testProvider: (providerId: string) => Promise<ProviderTestResult>;
+  openProviderConsole: (providerId: string) => Promise<void>;
   refreshSystem: () => Promise<void>;
 
   upsertJob: (job: GenerationJob) => void;
@@ -1094,6 +1095,14 @@ export const useAppStore = create<AppStore>()((set, get) => {
 
     testProvider: async (providerId) => {
       return invoke<ProviderTestResult>("test_provider", { providerId });
+    },
+
+    openProviderConsole: async (providerId) => {
+      try {
+        await invoke("open_provider_console", { providerId });
+      } catch (error) {
+        pushToast("error", "无法打开供应商控制台", formatError(error));
+      }
     },
 
     refreshSystem: async () => {

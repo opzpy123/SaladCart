@@ -317,7 +317,7 @@ export function SettingsScreen() {
               素材溯源都在本机完成。
             </p>
             <div className="about-stats">
-              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.3"}</strong></div>
+              <div><span>应用版本</span><strong>{system?.appVersion ?? "0.4.5"}</strong></div>
               <div><span>运行平台</span><strong>{system?.platform ?? "macOS / Windows"}</strong></div>
               <div><span>项目数</span><strong>{system?.projectCount ?? 0}</strong></div>
             </div>
@@ -346,6 +346,7 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
   const saveSecret = useAppStore((s) => s.saveProviderSecret);
   const clearSecret = useAppStore((s) => s.clearProviderSecret);
   const testProvider = useAppStore((s) => s.testProvider);
+  const openConsole = useAppStore((s) => s.openProviderConsole);
   const [base, setBase] = useState(provider.apiBase);
   const [model, setModel] = useState(provider.defaultModel);
   const [groupId, setGroupId] = useState(String(provider.options.groupId ?? ""));
@@ -500,6 +501,11 @@ function ProviderCard({ provider }: { provider: ProviderProfile }) {
           )}
         </div>
         <div className="provider-card__actions">
+          {provider.id.startsWith("ark-") || provider.id === "volc-music" ? (
+            <Button size="sm" variant="ghost" onClick={() => void openConsole(provider.id)}>
+              控制台
+            </Button>
+          ) : null}
           <Button size="sm" variant="ghost" onClick={test} disabled={testing}>
             检测
           </Button>

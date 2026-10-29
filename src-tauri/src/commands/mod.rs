@@ -634,6 +634,25 @@ pub fn open_storage_folder(app: AppHandle, state: State<'_, AppState>) -> AppRes
 }
 
 #[tauri::command]
+pub fn open_provider_console(app: AppHandle, provider_id: String) -> AppResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let url = match provider_id.as_str() {
+        "ark-image" | "ark-video" => {
+            "https://console.volcengine.com/ark/region:cn-beijing/model"
+        }
+        "volc-music" => "https://console.volcengine.com/iam/keymanage/",
+        other => {
+            return Err(AppError::Invalid(format!(
+                "no console shortcut for provider {other}"
+            )))
+        }
+    };
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| AppError::Message(format!("could not open provider console: {e}")))
+}
+
+#[tauri::command]
 pub fn reveal_project_folder(
     app: AppHandle,
     state: State<'_, AppState>,

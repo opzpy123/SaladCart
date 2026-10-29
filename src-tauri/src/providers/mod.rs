@@ -158,7 +158,7 @@ pub fn estimate_cost(provider_id: &str, kind: &str, duration_ms: i64, count: u32
         ("image", "stability-image") => 0.03 * count,
         ("image", "fal-image") => 0.01 * count,
         ("image", "ark-image") => 0.12 * count,
-        ("video", "ark-video") => 0.23 * seconds,
+        ("video", "ark-video") => 0.84 * seconds,
         ("music", "stability-audio") => 0.08,
         ("music", "elevenlabs-music") => 0.10,
         ("music", "volc-music") => 0.002 * seconds,

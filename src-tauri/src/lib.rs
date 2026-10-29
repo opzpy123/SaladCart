@@ -72,6 +72,7 @@ pub fn run() {
             commands::test_provider,
             commands::get_system_status,
             commands::open_storage_folder,
+            commands::open_provider_console,
             commands::reveal_project_folder,
             commands::search_music,
             commands::import_music_url,

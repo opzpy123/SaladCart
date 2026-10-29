@@ -931,13 +931,15 @@ async fn ark_submit(
     if let Some(frame) = &request.start_frame {
         content.push(json!({
             "type": "image_url",
-            "image_url": {"url": providers::data_uri(frame)?}
+            "image_url": {"url": providers::data_uri(frame)?},
+            "role": "first_frame"
         }));
     }
     for reference in request.references.iter().take(3) {
         content.push(json!({
             "type": "image_url",
-            "image_url": {"url": providers::data_uri(reference)?}
+            "image_url": {"url": providers::data_uri(reference)?},
+            "role": "reference_image"
         }));
     }
     let duration = if seconds(request) <= 5 { 5 } else { 10 };

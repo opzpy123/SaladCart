@@ -230,7 +230,7 @@ pub fn default_settings() -> Settings {
             "ark-video",
             "火山方舟 Seedance",
             "https://ark.cn-beijing.volces.com/api/v3",
-            "doubao-seedance-2-0-mini-260615",
+            "doubao-seedance-1-0-pro-fast-251015",
             "ARK_API_KEY",
             (vec!["9:16", "16:9", "1:1"], vec![5, 10], true, true),
         ),
@@ -346,7 +346,7 @@ pub fn load(paths: &AppPaths) -> Settings {
         }
     }
     for provider in &mut settings.providers {
-        provider.api_key_set = secret_available(provider);
+        provider.api_key_set = provider.enabled && secret_available(provider);
     }
     settings
 }
@@ -362,6 +362,12 @@ pub fn save(paths: &AppPaths, settings: &Settings) -> AppResult<()> {
 }
 
 fn secret_available(provider: &crate::models::ProviderProfile) -> bool {
+    let local = provider.id.starts_with("mock-")
+        || provider.vendor == "ollama"
+        || provider.id == "comfyui-image";
+    if local {
+        return false;
+    }
     secrets::has_secret(&provider.id).unwrap_or(false)
         || (!provider.env_var.is_empty() && std::env::var(&provider.env_var).is_ok())
 }
