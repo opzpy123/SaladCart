@@ -1,0 +1,321 @@
+{
+  "runId": 40817327687,
+  "runAttempt": 1,
+  "event": "push",
+  "status": "completed",
+  "conclusion": "success",
+  "headSha": "873b96c03f748f9b790aac65f61396a8247a4880",
+  "headBranch": "main",
+  "url": "https://github.com/opzpy123/SaladCart/actions/runs/40817327687",
+  "createdAt": "2026-10-29T04:21:52Z",
+  "updatedAt": "2026-10-29T05:31:56Z",
+  "jobs": [
+    {
+      "name": "build (macos-15, macos-arm64, aarch64-apple-darwin)",
+      "conclusion": "success",
+      "startedAt": "2026-10-29T05:07:49Z",
+      "completedAt": "2026-10-29T05:18:02Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run Windows TTS smoke test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build installers (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build installers (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Windows packaged selftest",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload build log",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "build (macos-15-intel, --target x86_64-apple-darwin, macos-x64, x86_64-apple-darwin)",
+      "conclusion": "success",
+      "startedAt": "2026-10-29T05:15:00Z",
+      "completedAt": "2026-10-29T05:31:55Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run Windows TTS smoke test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build installers (macOS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build installers (Windows)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Windows packaged selftest",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload build log",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "build (windows-latest, windows-x64, x86_64-pc-windows-msvc)",
+      "conclusion": "success",
+      "startedAt": "2026-10-29T04:21:56Z",
+      "completedAt": "2026-10-29T04:36:49Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install macOS Rust targets",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Install frontend dependencies",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare bundled FFmpeg",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify bundled FFmpeg (macOS)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Verify bundled FFmpeg (Windows)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run frontend tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (macOS)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run Rust tests with bundled FFmpeg (Windows)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run Windows TTS smoke test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build installers (macOS)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Build installers (Windows)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Windows packaged selftest",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload build log",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload unsigned artifacts",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run pnpm/action-setup@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-29T05:31:56Z",
+      "completedAt": "2026-10-29T05:31:56Z",
+      "steps": []
+    }
+  ]
+}
