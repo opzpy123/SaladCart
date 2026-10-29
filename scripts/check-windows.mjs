@@ -34,13 +34,14 @@ try {
   if (process.platform === "win32") {
     args = ["check", "--target", target];
   } else {
-    const rc = spawnSync("llvm-rc", ["-V"], { encoding: "utf8" });
-    if (rc.error || rc.status !== 0) {
-      shimDir = mkdtempSync(path.join(os.tmpdir(), "saladcart-rc-"));
-      const shim = path.join(shimDir, "llvm-rc");
-      writeFileSync(
-        shim,
-        `#!/bin/sh
+    // Always shim the resource compiler on non-Windows hosts. GitHub's Ubuntu
+    // image may ship a real llvm-rc, which makes tauri-build try to compile the
+    // Windows resource and fail in this compile-only gate.
+    shimDir = mkdtempSync(path.join(os.tmpdir(), "saladcart-rc-"));
+    const shim = path.join(shimDir, "llvm-rc");
+    writeFileSync(
+      shim,
+      `#!/bin/sh
 if [ "$1" = "-V" ]; then
   echo "LLVM Resource Converter (check shim) no-preprocess"
   exit 0
@@ -54,9 +55,8 @@ done
 if [ -n "$out" ]; then printf 'CHECK' > "$out"; fi
 exit 0
 `,
-      );
-      chmodSync(shim, 0o755);
-    }
+    );
+    chmodSync(shim, 0o755);
     const probe = spawnSync(cargo, ["xwin", "--version"], { encoding: "utf8" });
     if (probe.status !== 0) {
       console.error("cargo-xwin is required: cargo install cargo-xwin");
