@@ -2,16 +2,18 @@
 
 Release date: 2026-10-29
 Source: `main` at build time (Chinese error messages for trend setup)
-Status: **unsigned macOS prerelease**. Windows packaging intentionally skipped.
+Status: **unsigned macOS prerelease; Windows x64 installer built and packaged-selftest passed on GitHub Actions.**
 
 ## Artifact
 
 | Platform | File | Size | SHA-256 |
 | --- | --- | --- | --- |
 | macOS 11+ arm64 | `release/SaladCart_0.4.12_aarch64.dmg` | 21.91 MiB | `bd613b68dc33a1504aa5b9646c3b938aacc7332ee04ed02d61c922cd4ea3b495` |
+| Windows x64 | GitHub Actions artifact `saladcart-windows-x64` (NSIS setup + MSI) | 52,000,203 bytes (zip) | see Actions artifact |
 
 The DMG is **not signed or notarized**. On first launch use right-click → **Open**, or
-System Settings → Privacy & Security → **Open Anyway**.
+System Settings → Privacy & Security → **Open Anyway**. The Windows build is unsigned.
+See [windows-ci-verification.md](windows-ci-verification.md) for the CI evidence.
 
 ## Changes since 0.4.11
 
@@ -31,17 +33,18 @@ System Settings → Privacy & Security → **Open Anyway**.
   playback, new-project isolation, archive-to-trash, and UI export.
 - UI export produced a new 1080×1920 H.264/AAC MP4, 5.04 s, 30 fps; task queue returned
   to idle and `provenance.json` was refreshed.
-- Normal (non-env) launch read **3 of 4** provider keys from the Keychain. DeepSeek still
-  showed unconfigured because macOS displayed its one-time Keychain authorization sheet;
-  security policy requires the user to complete that sheet manually. This is the only
-  remaining UI verification step for the Keychain fix.
+- Normal (non-env) launch read **4/4 provider keys** from the Keychain after the user
+  completed the one-time macOS authorization sheet; DeepSeek showed READY.
+- GitHub Actions run `40829025583` (v0.4.12): the Windows job passed bundled-FFmpeg
+  verification, Rust tests, TTS smoke test, installer build, and **packaged
+  `--selftest`** on `windows-latest`; macOS arm64 also passed. Windows installers are in
+  the `saladcart-windows-x64` artifact.
 
 ## Remaining setup
 
-- Unlock the Mac, approve the “SaladCart 想要使用…com.saladcart.studio.providers” sheet
-  once, then click Settings → **重新检测**. The app should show 4 configured keys.
 - Authorized Douyin hot-list endpoint/token (Settings → 抖音热门参考).
 - GenBGM needs an IAM `AccessKey:SecretKey`; the stored music value is an Ark API key.
-- Windows/Actions verification and a public GitHub Release remain external.
+- A public GitHub Release was not created; CI artifacts and `ci-status-*` branches carry
+  the unsigned installers.
 
 See [trend-reference.md](trend-reference.md) for the endpoint contract.

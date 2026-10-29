@@ -79,7 +79,7 @@ Windows: %APPDATA%\com.saladcart.studio
 - 真实供应商：DeepSeek 剧本与小说改编、Seedream 5.0 Flash 关键帧/角色定妆照、Seedance 1.0 Pro Fast 图生视频均实际出片；真实视频已写入镜头 take、自动装配并导出 1080×1920 MP4；macOS 系统 TTS 生成了 1.56s 配音素材。
 - 发布自检：macOS 打包 `.app` 执行 `saladcart --selftest` 成功（4 片段、19 秒 MP4、423,595 字节）；Windows 便携包同样带自检。
 - 手动：Chromium 走查 Dashboard、剧本、角色、分镜、剪辑、音乐、设置；原生 `.app` 走查演示项目、3 章小说改编为 3 集 9 镜、历史 take 切换、审片装配、素材导入对话框、项目预算、批量生成 6 条系统配音、V1 配音轨，并实际导出 19 秒 1080×1920 H.264/AAC 成片。
-- 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows 目标已通过 `cargo xwin check` 编译检查，但未在 Windows 真机运行；未配置 Apple/Windows 签名证书，因此产物为未签名版本。
+- 跨平台：GitHub Actions 矩阵包含 macOS arm64 / x64 与 Windows x64 构建，测试使用随包 FFmpeg sidecar；Windows x64 已在 `windows-latest` 通过 Rust 测试、TTS 冒烟与打包 `--selftest`，并产出 NSIS/MSI 安装包（未签名）；未配置 Apple/Windows 签名证书，因此产物为未签名版本。证据见 [docs/windows-ci-verification.md](docs/windows-ci-verification.md)。
 
 ```bash
 pnpm test
@@ -88,7 +88,7 @@ SALADCART_FFMPEG=$(command -v ffmpeg) cargo test --manifest-path src-tauri/Cargo
 
 ## 发布状态
 
-`v0.4.12` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.4.12_aarch64.dmg`（SHA-256 `bd613b68dc33a1504aa5b9646c3b938aacc7332ee04ed02d61c922cd4ea3b495`）。按项目要求跳过 Windows 打包，未发布 0.4.12 Windows 产物。校验值、安装提示与已知边界见 [docs/release-0.4.12.md](docs/release-0.4.12.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。本机未安装/登录 `gh`，未创建公开 GitHub Release。
+`v0.4.12` 的源码已提交到仓库。macOS arm64 未签名、自带 FFmpeg 的 DMG 在 `release/SaladCart_0.4.12_aarch64.dmg`（SHA-256 `bd613b68dc33a1504aa5b9646c3b938aacc7332ee04ed02d61c922cd4ea3b495`）。Windows x64 安装包由 GitHub Actions 构建，并在 `windows-latest` 通过打包自检（产物 `saladcart-windows-x64`，未签名）。校验值、安装提示与已知边界见 [docs/release-0.4.12.md](docs/release-0.4.12.md) 与 [docs/windows-ci-verification.md](docs/windows-ci-verification.md)，发布门禁见 [docs/release-checklist.md](docs/release-checklist.md)。本机未安装/登录 `gh`，未创建公开 GitHub Release。
 
 ## 产品研究
 
